@@ -12,6 +12,9 @@ import ProfilesPage from './pages/admin/ProfilesPage';
 import AdminLayout from './components/admin/AdminLayout';
 import CssBaseline from '@mui/material/CssBaseline';
 
+// Получаем базовый URL для маршрутизации
+const basename = process.env.NODE_ENV === 'production' ? '/' : '/';
+
 const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -103,7 +106,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <Router basename={basename}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
