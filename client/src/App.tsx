@@ -1,5 +1,5 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
@@ -11,9 +11,6 @@ import SettingsPage from './pages/admin/SettingsPage';
 import ProfilesPage from './pages/admin/ProfilesPage';
 import AdminLayout from './components/admin/AdminLayout';
 import CssBaseline from '@mui/material/CssBaseline';
-
-// Получаем базовый URL для маршрутизации
-const basename = process.env.NODE_ENV === 'production' ? '/' : '/';
 
 const theme = createTheme({
   palette: {
@@ -106,21 +103,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router basename={process.env.PUBLIC_URL}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/profile/:id" element={<ProfilePage />} />
-          <Route path="/add-profile" element={<ContactAdminPage />} />
-          <Route path="/admin/login" element={<LoginPage />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="profiles" element={<ProfilesPage />} />
-            <Route path="profiles/new" element={<Navigate to="/admin/profiles" replace />} />
-            <Route path="cities" element={<CitiesPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </Router>
+      <Outlet />
     </ThemeProvider>
   );
 };

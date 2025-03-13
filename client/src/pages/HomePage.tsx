@@ -88,15 +88,11 @@ const HomePage: React.FC = () => {
         if (Array.isArray(response.data) && response.data.length > 0) {
           setCities(response.data);
           setSelectedCity(response.data[0]);
-        } else {
-          console.warn('Получен пустой или неверный список городов');
-          setCities([]);
         }
       } catch (error) {
         const { message } = handleAxiosError(error);
         console.error('Error fetching cities:', message);
         setError('Ошибка при загрузке городов');
-        setCities([]);
       }
     };
 
