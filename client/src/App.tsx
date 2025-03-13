@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
@@ -106,7 +106,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router basename={basename}>
+      <Router basename={process.env.PUBLIC_URL}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
