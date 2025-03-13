@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', profileController.getProfiles);
-router.get('/:id', profileController.getProfiles); // Временно используем getProfiles вместо getProfile
+router.get('/:id', profileController.getProfileById);
 
 // Admin routes
 router.post('/', authMiddleware, profileController.createProfile);

@@ -283,4 +283,38 @@ export const verifyProfile = async (req: Request, res: Response) => {
     console.error('Error verifying profile:', error);
     res.status(500).json({ error: 'Failed to verify profile' });
   }
+};
+
+export const getServices = async (_req: Request, res: Response) => {
+  try {
+    // Все возможные услуги (можно взять из serviceTranslations.ts)
+    const services = [
+      // Секс
+      'classic', 'anal', 'lesbian', 'group_mmf', 'group_ffm', 'with_toys', 'in_car',
+      
+      // Ласки клиенту
+      'blowjob_with_condom', 'blowjob_without_condom', 'deep_blowjob', 'car_blowjob', 
+      'anilingus_to_client', 'fisting_to_client', 'kisses',
+      
+      // BDSM и фетиш
+      'light_domination', 'mistress', 'flogging', 'trampling', 'face_sitting', 
+      'strapon', 'bondage', 'slave', 'role_play', 'foot_fetish', 
+      'golden_rain_out', 'golden_rain_in', 'copro_out', 'copro_in', 'enema',
+      
+      // Эротический массаж
+      'relaxing', 'professional', 'body_massage', 'lingam_massage', 'four_hands', 'urological',
+      
+      // Шоу
+      'strip_pro', 'strip_amateur', 'belly_dance', 'twerk', 'lesbian_show',
+      
+      // Виртуальные услуги
+      'sex_chat'
+    ];
+    
+    console.log('Returning services list');
+    res.json(services);
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    res.status(500).json({ error: 'Failed to fetch services' });
+  }
 }; 

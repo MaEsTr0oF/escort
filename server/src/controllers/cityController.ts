@@ -68,4 +68,32 @@ export const deleteCity = async (req: Request, res: Response) => {
     console.error('Error deleting city:', error);
     res.status(500).json({ error: 'Failed to delete city' });
   }
+};
+
+export const getDistrictsByCityId = async (req: Request, res: Response) => {
+  try {
+    const { cityId } = req.params;
+    
+    console.log('Fetching districts for city ID:', cityId);
+    
+    // Находим все анкеты в указанном городе
+    const profiles = await prisma.profile.findMany({
+      where: { 
+        cityId: Number(cityId),
+        district: { not: null }
+      },
+      select: { 
+        district: true 
+      }
+    });
+    
+    // Извлекаем уникальные районы
+    const districts = [...new Set(profiles.map(p => p.district).filter(Boolean))];
+    
+    console.log('Found districts:', districts);
+    res.json(districts);
+  } catch (error) {
+    console.error('Error fetching districts:', error);
+    res.status(500).json({ error: 'Failed to fetch districts' });
+  }
 }; 
