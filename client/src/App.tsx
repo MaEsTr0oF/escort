@@ -106,7 +106,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router basename={process.env.PUBLIC_URL}>
+      <Router>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
