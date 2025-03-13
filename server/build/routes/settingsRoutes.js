@@ -41,8 +41,14 @@ const settingsController = __importStar(require("../controllers/settingsControll
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
-router.get('/public', (req, res) => settingsController.getPublicSettings(req, res));
+router.get('/public', async (req, res) => {
+    await settingsController.getPublicSettings(req, res);
+});
 // Admin routes
-router.get('/', auth_1.authMiddleware, (req, res) => settingsController.getSettings(req, res));
-router.put('/', auth_1.authMiddleware, (req, res) => settingsController.updateSettings(req, res));
+router.get('/', auth_1.authMiddleware, async (req, res) => {
+    await settingsController.getSettings(req, res);
+});
+router.put('/', auth_1.authMiddleware, async (req, res) => {
+    await settingsController.updateSettings(req, res);
+});
 exports.default = router;
