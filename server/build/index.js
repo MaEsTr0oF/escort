@@ -53,7 +53,7 @@ const settingsRoutes_1 = __importDefault(require("./routes/settingsRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const prisma = new client_1.PrismaClient();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5002;
 // Проверка подключения к базе данных
 async function checkDatabaseConnection() {
     try {
