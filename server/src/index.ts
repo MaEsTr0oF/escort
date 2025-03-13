@@ -58,35 +58,19 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Публичные маршруты
-app.get('/api/profiles', profileController.getProfiles);
-app.get('/api/profiles/:id', profileController.getProfileById);
-app.get('/api/cities', cityController.getCities);
-app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
-app.get('/api/services', profileController.getServices);
-app.get('/api/settings/public', settingsController.getPublicSettings);
-
-// Маршруты администратора
-app.post('/api/auth/login', authController.login);
-
-// Защищенные маршруты (требуют аутентификации)
-app.use('/api/admin', authMiddleware);
-app.get('/api/admin/profiles', profileController.getProfiles);
-app.post('/api/admin/profiles', profileController.createProfile);
-app.put('/api/admin/profiles/:id', profileController.updateProfile);
-app.delete('/api/admin/profiles/:id', profileController.deleteProfile);
-app.patch('/api/admin/profiles/:id/verify', profileController.verifyProfile);
-app.post('/api/admin/cities', cityController.createCity);
-app.put('/api/admin/cities/:id', cityController.updateCity);
-app.delete('/api/admin/cities/:id', cityController.deleteCity);
-app.get('/api/admin/settings', settingsController.getSettings);
-app.put('/api/admin/settings', settingsController.updateSettings);
-
-// API routes
-app.use('/api/auth', authRoutes);
-
+app.use('/api/profiles', profileRoutes);
 app.use('/api/cities', cityRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/auth', authRoutes);
+
+// Маршруты администратора
+app.use('/api/admin', authMiddleware);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../public')));

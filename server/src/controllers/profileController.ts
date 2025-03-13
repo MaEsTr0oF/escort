@@ -27,40 +27,99 @@ export const getProfiles = async (req: Request, res: Response) => {
       cityId,
       district,
       services,
-      priceRange,
-      age,
-      height,
-      weight,
-      breastSize,
-      isVerified,
+      price,
+      appearance,
+      verification,
+      other,
+      outcall
     } = req.query;
 
     // Проверяем наличие токена администратора в заголовках
     const isAdminRequest = req.headers.authorization?.startsWith('Bearer ');
 
-    console.log('Request path:', req.path);
+    console.log('Request query:', req.query);
     console.log('Is admin request:', isAdminRequest);
-    console.log('Authorization header:', req.headers.authorization);
 
     const filters: any = {
       isActive: isAdminRequest ? undefined : true,
-      cityId: cityId ? Number(cityId) : undefined,
     };
 
+    // Базовые фильтры
+    if (cityId) filters.cityId = Number(cityId);
     if (district) filters.district = district as string;
-    if (breastSize) filters.breastSize = Number(breastSize);
-    if (isVerified) filters.isVerified = isVerified === 'true';
 
-    if (services) {
+    // Фильтры по ценам
+    if (price && typeof price === 'object') {
+      const { from, to } = price as any;
+      if (from) filters.price1Hour = { gte: Number(from) };
+      if (to) filters.price1Hour = { ...filters.price1Hour, lte: Number(to) };
+    }
+
+    // Фильтры по внешности
+    if (appearance && typeof appearance === 'object') {
+      const { age, height, weight, breastSize } = appearance as any;
+      if (age) {
+        const [minAge, maxAge] = age;
+        filters.age = { gte: Number(minAge), lte: Number(maxAge) };
+      }
+      if (height) {
+        const [minHeight, maxHeight] = height;
+        filters.height = { gte: Number(minHeight), lte: Number(maxHeight) };
+      }
+      if (weight) {
+        const [minWeight, maxWeight] = weight;
+        filters.weight = { gte: Number(minWeight), lte: Number(maxWeight) };
+      }
+      if (breastSize) {
+        const [minBreast, maxBreast] = breastSize;
+        filters.breastSize = { gte: Number(minBreast), lte: Number(maxBreast) };
+      }
+    }
+
+    // Фильтр по услугам
+    if (services && Array.isArray(services) && services.length > 0) {
       filters.services = {
-        hasEvery: Array.isArray(services) ? services : [services],
+        hasSome: services
       };
     }
 
-    if (priceRange) {
-      const { min, max } = JSON.parse(priceRange as string);
-      if (min) filters.price1Hour = { gte: Number(min) };
-      if (max) filters.price1Hour = { ...filters.price1Hour, lte: Number(max) };
+    // Фильтры верификации
+    if (verification && Array.isArray(verification)) {
+      verification.forEach(v => {
+        switch (v) {
+          case 'verified':
+            filters.isVerified = true;
+            break;
+          case 'with_video':
+            filters.hasVideo = true;
+            break;
+          case 'with_reviews':
+            filters.hasReviews = true;
+            break;
+        }
+      });
+    }
+
+    // Прочие фильтры
+    if (other && Array.isArray(other)) {
+      other.forEach(o => {
+        switch (o) {
+          case 'non_smoking':
+            filters.isNonSmoking = true;
+            break;
+          case 'new':
+            filters.isNew = true;
+            break;
+          case '24_hours':
+            filters.is24Hours = true;
+            break;
+        }
+      });
+    }
+
+    // Фильтр выезда
+    if (outcall === 'true') {
+      filters.outCall = true;
     }
 
     // Удаляем undefined значения из фильтров
