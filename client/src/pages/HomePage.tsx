@@ -76,28 +76,7 @@ const HomePage: React.FC = () => {
     { id: 2, code: 'en', name: 'English' }
   ]);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(languages[0]);
-  const [filters, setFilters] = useState<NewFilterParams>({
-    gender: [],
-    appearance: {
-      age: [18, 70],
-      height: [140, 195],
-      weight: [40, 110],
-      breastSize: [1, 10],
-      nationality: [],
-      hairColor: [],
-      bikiniZone: [],
-    },
-    district: [],
-    price: {
-      from: null,
-      to: null,
-      hasExpress: false,
-    },
-    services: [],
-    verification: [],
-    other: [],
-    outcall: false,
-  });
+  const [filters, setFilters] = useState<NewFilterParams>(initialFilters);
   const [districts, setDistricts] = useState<string[]>([]);
   const [services, setServices] = useState<string[]>([]);
 
@@ -106,8 +85,8 @@ const HomePage: React.FC = () => {
     const fetchCities = async () => {
       try {
         const response = await axios.get(`${API_URL}/cities`);
-        setCities(response.data);
-        if (response.data.length > 0) {
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          setCities(response.data);
           setSelectedCity(response.data[0]);
         }
       } catch (error) {
@@ -123,17 +102,23 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     // Загрузка анкет
     const fetchProfiles = async () => {
+      if (!selectedCity) return;
+      
       setLoading(true);
       setError('');
       
       try {
         const params = {
-          ...(selectedCity && { cityId: selectedCity.id }),
+          cityId: selectedCity.id,
           ...filters
         };
 
         const response = await axios.get(`${API_URL}/profiles`, { params });
-        setProfiles(response.data);
+        if (Array.isArray(response.data)) {
+          setProfiles(response.data);
+        } else {
+          setError('Некорректный формат данных от сервера');
+        }
       } catch (error) {
         const { message } = handleAxiosError(error);
         console.error('Error fetching profiles:', message);
@@ -157,16 +142,26 @@ const HomePage: React.FC = () => {
           axios.get(`${API_URL}/services`)
         ]);
         
-        setDistricts(districtsResponse.data);
-        setServices(servicesResponse.data);
+        if (Array.isArray(districtsResponse.data)) {
+          setDistricts(districtsResponse.data);
+        }
+        
+        if (Array.isArray(servicesResponse.data)) {
+          setServices(servicesResponse.data);
+        }
       } catch (error) {
         const { message } = handleAxiosError(error);
-        console.error('Error fetching settings:', message);
+        console.error('Error fetching filter data:', message);
+        // Не показываем ошибку пользователю, так как это не критично
       }
     };
 
     fetchFilterData();
   }, [selectedCity]);
+
+  const handleFilterChange = (newFilters: NewFilterParams) => {
+    setFilters(newFilters);
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -188,7 +183,7 @@ const HomePage: React.FC = () => {
       );
     }
 
-    if (profiles.length === 0) {
+    if (!Array.isArray(profiles) || profiles.length === 0) {
       return (
         <StyledAlert severity="info">
           По вашему запросу ничего не найдено
@@ -196,23 +191,15 @@ const HomePage: React.FC = () => {
       );
     }
 
-return (
-  <Grid container spacing={3}>
-    {Array.isArray(profiles) ? profiles.map((profile) => (
-      <Grid item xs={12} sm={6} md={4} key={profile.id}>
-        <ProfileCard profile={profile} />
+    return (
+      <Grid container spacing={3}>
+        {profiles.map((profile) => (
+          <Grid item xs={12} sm={6} md={4} key={profile.id}>
+            <ProfileCard profile={profile} />
+          </Grid>
+        ))}
       </Grid>
-    )) : (
-      <Grid item xs={12}>
-        <Alert severity="error">
-          Ошибка загрузки данных
-        </Alert>
-      </Grid>
-    )}
-  </Grid>
-);
-
-
+    );
   };
 
   return (
@@ -228,8 +215,8 @@ return (
       <ContentContainer maxWidth="lg">
         <FilterBar
           filters={filters}
-          onFilterChange={setFilters}
-          districts={districts}
+          onFilterChange={handleFilterChange}
+          districts={districts || []}
         />
         {renderContent()}
       </ContentContainer>

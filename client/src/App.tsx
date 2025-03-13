@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
@@ -103,21 +103,19 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/profile/:id" element={<ProfilePage />} />
-          <Route path="/add-profile" element={<ContactAdminPage />} />
-          <Route path="/admin/login" element={<LoginPage />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="profiles" element={<ProfilesPage />} />
-            <Route path="profiles/new" element={<Navigate to="/admin/profiles" replace />} />
-            <Route path="cities" element={<CitiesPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-      </Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
+        <Route path="/add-profile" element={<ContactAdminPage />} />
+        <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="profiles" element={<ProfilesPage />} />
+          <Route path="profiles/new" element={<Navigate to="/admin/profiles" replace />} />
+          <Route path="cities" element={<CitiesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
     </ThemeProvider>
   );
 };
