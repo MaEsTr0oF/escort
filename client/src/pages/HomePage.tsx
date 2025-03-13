@@ -196,15 +196,23 @@ const HomePage: React.FC = () => {
       );
     }
 
-    return (
-      <Grid container spacing={3}>
-        {profiles.map((profile) => (
-          <Grid item xs={12} sm={6} md={4} key={profile.id}>
-            <ProfileCard profile={profile} />
-          </Grid>
-        ))}
+return (
+  <Grid container spacing={3}>
+    {Array.isArray(profiles) ? profiles.map((profile) => (
+      <Grid item xs={12} sm={6} md={4} key={profile.id}>
+        <ProfileCard profile={profile} />
       </Grid>
-    );
+    )) : (
+      <Grid item xs={12}>
+        <Alert severity="error">
+          Ошибка загрузки данных
+        </Alert>
+      </Grid>
+    )}
+  </Grid>
+);
+
+
   };
 
   return (

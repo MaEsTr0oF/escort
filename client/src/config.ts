@@ -1,3 +1,3 @@
 export const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://diorchfw.beget.tech/api'
-  : 'http://localhost:5001'; 
+  ? '/api'  // Используем относительный путь вместо полного URL
+  : 'http://localhost:5001';

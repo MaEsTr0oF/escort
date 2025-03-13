@@ -3,6 +3,24 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const profile = await prisma.profile.findUnique({
+      where: { id: parseInt(id) },
+      include: { city: true }
+    });
+    
+    if (!profile) {
+      return res.status(404).json({ message: 'Профиль не найден' });
+    }
+    
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+};
+
 export const getProfiles = async (req: Request, res: Response) => {
   try {
     const {
