@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCity = exports.updateCity = exports.createCity = exports.getCities = void 0;
+exports.getDistrictsByCityId = exports.deleteCity = exports.updateCity = exports.createCity = exports.getCities = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const getCities = async (_req, res) => {
@@ -71,3 +71,28 @@ const deleteCity = async (req, res) => {
     }
 };
 exports.deleteCity = deleteCity;
+const getDistrictsByCityId = async (req, res) => {
+    try {
+        const { cityId } = req.params;
+        console.log('Fetching districts for city ID:', cityId);
+        // Находим все анкеты в указанном городе
+        const profiles = await prisma.profile.findMany({
+            where: {
+                cityId: Number(cityId),
+                district: { not: null }
+            },
+            select: {
+                district: true
+            }
+        });
+        // Извлекаем уникальные районы
+        const districts = [...new Set(profiles.map(p => p.district).filter(Boolean))];
+        console.log('Found districts:', districts);
+        res.json(districts);
+    }
+    catch (error) {
+        console.error('Error fetching districts:', error);
+        res.status(500).json({ error: 'Failed to fetch districts' });
+    }
+};
+exports.getDistrictsByCityId = getDistrictsByCityId;

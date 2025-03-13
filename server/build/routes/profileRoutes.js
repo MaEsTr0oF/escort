@@ -42,7 +42,7 @@ const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
 router.get('/', profileController.getProfiles);
-router.get('/:id', profileController.getProfiles); // Временно используем getProfiles вместо getProfile
+router.get('/:id', profileController.getProfileById);
 // Admin routes
 router.post('/', auth_1.authMiddleware, profileController.createProfile);
 router.put('/:id', auth_1.authMiddleware, profileController.updateProfile);

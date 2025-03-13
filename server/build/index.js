@@ -94,6 +94,8 @@ app.use(express_1.default.urlencoded({ extended: true, limit: '50mb' }));
 app.get('/api/profiles', profileController.getProfiles);
 app.get('/api/profiles/:id', profileController.getProfileById);
 app.get('/api/cities', cityController.getCities);
+app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
+app.get('/api/services', profileController.getServices);
 app.get('/api/settings/public', settingsController.getPublicSettings);
 // Маршруты администратора
 app.post('/api/auth/login', authController.login);
