@@ -376,3 +376,26 @@ export const getServices = async (_req: Request, res: Response) => {
     res.status(500).json({ error: 'Не удалось получить список услуг' });
   }
 };
+
+export const getAdminProfiles = async (req: Request, res: Response) => {
+  try {
+    const { limit } = req.query;
+    const limitNumber = limit ? parseInt(limit as string) : undefined;
+    
+    const profiles = await prisma.profile.findMany({
+      take: limitNumber,
+      include: {
+        city: true,
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    console.log(`Found ${profiles.length} profiles for admin dashboard`);
+    return res.json(profiles);
+  } catch (error) {
+    console.error('Error fetching admin profiles:', error);
+    return res.status(500).json({ error: 'Failed to fetch profiles' });
+  }
+};

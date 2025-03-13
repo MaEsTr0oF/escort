@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServices = exports.verifyProfile = exports.deleteProfile = exports.updateProfile = exports.createProfile = exports.getProfileById = exports.getProfiles = exports.getProfile = void 0;
+exports.getAdminProfiles = exports.getServices = exports.verifyProfile = exports.deleteProfile = exports.updateProfile = exports.createProfile = exports.getProfileById = exports.getProfiles = exports.getProfile = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const getProfile = async (req, res) => {
@@ -339,3 +339,25 @@ const getServices = async (_req, res) => {
     }
 };
 exports.getServices = getServices;
+const getAdminProfiles = async (req, res) => {
+    try {
+        const { limit } = req.query;
+        const limitNumber = limit ? parseInt(limit) : undefined;
+        const profiles = await prisma.profile.findMany({
+            take: limitNumber,
+            include: {
+                city: true,
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+        console.log(`Found ${profiles.length} profiles for admin dashboard`);
+        return res.json(profiles);
+    }
+    catch (error) {
+        console.error('Error fetching admin profiles:', error);
+        return res.status(500).json({ error: 'Failed to fetch profiles' });
+    }
+};
+exports.getAdminProfiles = getAdminProfiles;
