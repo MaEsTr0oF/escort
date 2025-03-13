@@ -258,6 +258,10 @@ const verifyProfile = async (req, res) => {
 exports.verifyProfile = verifyProfile;
 const getServices = async (_req, res) => {
     try {
+<<<<<<< HEAD
+=======
+        // Все возможные услуги (можно взять из serviceTranslations.ts)
+>>>>>>> 47edeae3aeafc63911c3a57a44c28eb507634ed8
         const services = [
             // Секс
             'classic', 'anal', 'lesbian', 'group_mmf', 'group_ffm', 'with_toys', 'in_car',
@@ -275,12 +279,21 @@ const getServices = async (_req, res) => {
             // Виртуальные услуги
             'sex_chat'
         ];
+<<<<<<< HEAD
         console.log('Отправка списка услуг');
         res.json(services);
     }
     catch (error) {
         console.error('Ошибка при получении списка услуг:', error);
         res.status(500).json({ error: 'Не удалось получить список услуг' });
+=======
+        console.log('Returning services list');
+        res.json(services);
+    }
+    catch (error) {
+        console.error('Error fetching services:', error);
+        res.status(500).json({ error: 'Failed to fetch services' });
+>>>>>>> 47edeae3aeafc63911c3a57a44c28eb507634ed8
     }
 };
 exports.getServices = getServices;

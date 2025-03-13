@@ -74,7 +74,12 @@ exports.deleteCity = deleteCity;
 const getDistrictsByCityId = async (req, res) => {
     try {
         const { cityId } = req.params;
+<<<<<<< HEAD
         console.log('Получение районов для города ID:', cityId);
+=======
+        console.log('Fetching districts for city ID:', cityId);
+        // Находим все анкеты в указанном городе
+>>>>>>> 47edeae3aeafc63911c3a57a44c28eb507634ed8
         const profiles = await prisma.profile.findMany({
             where: {
                 cityId: Number(cityId),
@@ -84,6 +89,7 @@ const getDistrictsByCityId = async (req, res) => {
                 district: true
             }
         });
+<<<<<<< HEAD
         const districts = [...new Set(profiles.map(p => p.district).filter(Boolean))];
         console.log('Найдены районы:', districts);
         res.json(districts);
@@ -91,6 +97,16 @@ const getDistrictsByCityId = async (req, res) => {
     catch (error) {
         console.error('Ошибка при получении районов:', error);
         res.status(500).json({ error: 'Не удалось получить список районов' });
+=======
+        // Извлекаем уникальные районы
+        const districts = [...new Set(profiles.map(p => p.district).filter(Boolean))];
+        console.log('Found districts:', districts);
+        res.json(districts);
+    }
+    catch (error) {
+        console.error('Error fetching districts:', error);
+        res.status(500).json({ error: 'Failed to fetch districts' });
+>>>>>>> 47edeae3aeafc63911c3a57a44c28eb507634ed8
     }
 };
 exports.getDistrictsByCityId = getDistrictsByCityId;

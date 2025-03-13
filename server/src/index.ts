@@ -17,7 +17,7 @@ dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5002;
 
 // Проверка подключения к базе данных
 async function checkDatabaseConnection() {
@@ -62,6 +62,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.get('/api/profiles', profileController.getProfiles);
 app.get('/api/profiles/:id', profileController.getProfileById);
 app.get('/api/cities', cityController.getCities);
+app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
+app.get('/api/services', profileController.getServices);
 app.get('/api/settings/public', settingsController.getPublicSettings);
 app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
 app.get('/api/services', profileController.getServices);

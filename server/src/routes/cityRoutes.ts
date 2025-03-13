@@ -6,6 +6,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', cityController.getCities);
+router.get('/districts/:cityId', cityController.getDistrictsByCityId);
 
 // Admin routes
 router.post('/', authMiddleware, cityController.createCity);

@@ -42,6 +42,7 @@ const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
 router.get('/', cityController.getCities);
+router.get('/districts/:cityId', cityController.getDistrictsByCityId);
 // Admin routes
 router.post('/', auth_1.authMiddleware, cityController.createCity);
 router.put('/:id', auth_1.authMiddleware, cityController.updateCity);
