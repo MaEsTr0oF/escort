@@ -96,8 +96,6 @@ app.get('/api/cities', cityController.getCities);
 app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
 app.get('/api/services', profileController.getServices);
 app.get('/api/settings/public', settingsController.getPublicSettings);
-app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
-app.get('/api/services', profileController.getServices);
 // Маршруты администратора
 app.post('/api/auth/login', authController.login);
 // Защищенные маршруты (требуют аутентификации)
