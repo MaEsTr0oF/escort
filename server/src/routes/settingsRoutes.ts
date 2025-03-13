@@ -5,9 +5,10 @@ import { authMiddleware } from '../middleware/auth';
 const router = express.Router();
 
 // Public routes
-router.get('/', settingsController.getSettings);
+router.get('/public', (req, res) => settingsController.getPublicSettings(req, res));
 
 // Admin routes
-router.put('/', authMiddleware, settingsController.updateSettings);
+router.get('/', authMiddleware, (req, res) => settingsController.getSettings(req, res));
+router.put('/', authMiddleware, (req, res) => settingsController.updateSettings(req, res));
 
 export default router; 
