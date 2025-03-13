@@ -41,10 +41,10 @@ const cityController = __importStar(require("../controllers/cityController"));
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
-router.get('/', cityController.getCities);
-router.get('/districts/:cityId', cityController.getDistrictsByCityId);
+router.get('/', (req, res) => cityController.getCities(req, res));
+router.get('/districts/:cityId', (req, res) => cityController.getDistrictsByCityId(req, res));
 // Admin routes
-router.post('/', auth_1.authMiddleware, cityController.createCity);
-router.put('/:id', auth_1.authMiddleware, cityController.updateCity);
-router.delete('/:id', auth_1.authMiddleware, cityController.deleteCity);
+router.post('/', auth_1.authMiddleware, (req, res) => cityController.createCity(req, res));
+router.put('/:id', auth_1.authMiddleware, (req, res) => cityController.updateCity(req, res));
+router.delete('/:id', auth_1.authMiddleware, (req, res) => cityController.deleteCity(req, res));
 exports.default = router;

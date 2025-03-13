@@ -41,10 +41,10 @@ const profileController = __importStar(require("../controllers/profileController
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
-router.get('/', profileController.getProfiles);
-router.get('/:id', profileController.getProfileById);
+router.get('/', (req, res) => profileController.getProfiles(req, res));
+router.get('/:id', (req, res) => profileController.getProfileById(req, res));
 // Admin routes
-router.post('/', auth_1.authMiddleware, profileController.createProfile);
-router.put('/:id', auth_1.authMiddleware, profileController.updateProfile);
-router.delete('/:id', auth_1.authMiddleware, profileController.deleteProfile);
+router.post('/', auth_1.authMiddleware, (req, res) => profileController.createProfile(req, res));
+router.put('/:id', auth_1.authMiddleware, (req, res) => profileController.updateProfile(req, res));
+router.delete('/:id', auth_1.authMiddleware, (req, res) => profileController.deleteProfile(req, res));
 exports.default = router;
