@@ -63,7 +63,8 @@ app.get('/api/profiles', profileController.getProfiles);
 app.get('/api/profiles/:id', profileController.getProfileById);
 app.get('/api/cities', cityController.getCities);
 app.get('/api/settings/public', settingsController.getPublicSettings);
-
+app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
+app.get('/api/services', profileController.getServices);
 // Маршруты администратора
 app.post('/api/auth/login', authController.login);
 
@@ -82,7 +83,7 @@ app.put('/api/admin/settings', settingsController.updateSettings);
 
 // API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/profiles', profileRoutes);
+
 app.use('/api/cities', cityRoutes);
 app.use('/api/settings', settingsRoutes);
 

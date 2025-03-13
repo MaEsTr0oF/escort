@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCity = exports.updateCity = exports.createCity = exports.getCities = void 0;
+exports.getDistrictsByCityId = exports.deleteCity = exports.updateCity = exports.createCity = exports.getCities = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const getCities = async (_req, res) => {
@@ -71,3 +71,26 @@ const deleteCity = async (req, res) => {
     }
 };
 exports.deleteCity = deleteCity;
+const getDistrictsByCityId = async (req, res) => {
+    try {
+        const { cityId } = req.params;
+        console.log('Получение районов для города ID:', cityId);
+        const profiles = await prisma.profile.findMany({
+            where: {
+                cityId: Number(cityId),
+                district: { not: null }
+            },
+            select: {
+                district: true
+            }
+        });
+        const districts = [...new Set(profiles.map(p => p.district).filter(Boolean))];
+        console.log('Найдены районы:', districts);
+        res.json(districts);
+    }
+    catch (error) {
+        console.error('Ошибка при получении районов:', error);
+        res.status(500).json({ error: 'Не удалось получить список районов' });
+    }
+};
+exports.getDistrictsByCityId = getDistrictsByCityId;

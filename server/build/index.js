@@ -47,7 +47,6 @@ const authController = __importStar(require("./controllers/authController"));
 const settingsController = __importStar(require("./controllers/settingsController"));
 const auth_1 = require("./middleware/auth");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
-const profileRoutes_1 = __importDefault(require("./routes/profileRoutes"));
 const cityRoutes_1 = __importDefault(require("./routes/cityRoutes"));
 const settingsRoutes_1 = __importDefault(require("./routes/settingsRoutes"));
 dotenv_1.default.config();
@@ -95,6 +94,8 @@ app.get('/api/profiles', profileController.getProfiles);
 app.get('/api/profiles/:id', profileController.getProfileById);
 app.get('/api/cities', cityController.getCities);
 app.get('/api/settings/public', settingsController.getPublicSettings);
+app.get('/api/districts/:cityId', cityController.getDistrictsByCityId);
+app.get('/api/services', profileController.getServices);
 // Маршруты администратора
 app.post('/api/auth/login', authController.login);
 // Защищенные маршруты (требуют аутентификации)
@@ -111,7 +112,6 @@ app.get('/api/admin/settings', settingsController.getSettings);
 app.put('/api/admin/settings', settingsController.updateSettings);
 // API routes
 app.use('/api/auth', authRoutes_1.default);
-app.use('/api/profiles', profileRoutes_1.default);
 app.use('/api/cities', cityRoutes_1.default);
 app.use('/api/settings', settingsRoutes_1.default);
 // Serve static files from the React app
