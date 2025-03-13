@@ -23,33 +23,88 @@ exports.getProfile = getProfile;
 const getProfiles = async (req, res) => {
     var _a;
     try {
-        const { cityId, district, services, priceRange, age, height, weight, breastSize, isVerified, } = req.query;
+        const { cityId, district, services, price, appearance, verification, other, outcall } = req.query;
         // Проверяем наличие токена администратора в заголовках
         const isAdminRequest = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.startsWith('Bearer ');
-        console.log('Request path:', req.path);
+        console.log('Request query:', req.query);
         console.log('Is admin request:', isAdminRequest);
-        console.log('Authorization header:', req.headers.authorization);
         const filters = {
             isActive: isAdminRequest ? undefined : true,
-            cityId: cityId ? Number(cityId) : undefined,
         };
+        // Базовые фильтры
+        if (cityId)
+            filters.cityId = Number(cityId);
         if (district)
             filters.district = district;
-        if (breastSize)
-            filters.breastSize = Number(breastSize);
-        if (isVerified)
-            filters.isVerified = isVerified === 'true';
-        if (services) {
+        // Фильтры по ценам
+        if (price && typeof price === 'object') {
+            const { from, to } = price;
+            if (from)
+                filters.price1Hour = { gte: Number(from) };
+            if (to)
+                filters.price1Hour = Object.assign(Object.assign({}, filters.price1Hour), { lte: Number(to) });
+        }
+        // Фильтры по внешности
+        if (appearance && typeof appearance === 'object') {
+            const { age, height, weight, breastSize } = appearance;
+            if (age) {
+                const [minAge, maxAge] = age;
+                filters.age = { gte: Number(minAge), lte: Number(maxAge) };
+            }
+            if (height) {
+                const [minHeight, maxHeight] = height;
+                filters.height = { gte: Number(minHeight), lte: Number(maxHeight) };
+            }
+            if (weight) {
+                const [minWeight, maxWeight] = weight;
+                filters.weight = { gte: Number(minWeight), lte: Number(maxWeight) };
+            }
+            if (breastSize) {
+                const [minBreast, maxBreast] = breastSize;
+                filters.breastSize = { gte: Number(minBreast), lte: Number(maxBreast) };
+            }
+        }
+        // Фильтр по услугам
+        if (services && Array.isArray(services) && services.length > 0) {
             filters.services = {
-                hasEvery: Array.isArray(services) ? services : [services],
+                hasSome: services
             };
         }
-        if (priceRange) {
-            const { min, max } = JSON.parse(priceRange);
-            if (min)
-                filters.price1Hour = { gte: Number(min) };
-            if (max)
-                filters.price1Hour = Object.assign(Object.assign({}, filters.price1Hour), { lte: Number(max) });
+        // Фильтры верификации
+        if (verification && Array.isArray(verification)) {
+            verification.forEach(v => {
+                switch (v) {
+                    case 'verified':
+                        filters.isVerified = true;
+                        break;
+                    case 'with_video':
+                        filters.hasVideo = true;
+                        break;
+                    case 'with_reviews':
+                        filters.hasReviews = true;
+                        break;
+                }
+            });
+        }
+        // Прочие фильтры
+        if (other && Array.isArray(other)) {
+            other.forEach(o => {
+                switch (o) {
+                    case 'non_smoking':
+                        filters.isNonSmoking = true;
+                        break;
+                    case 'new':
+                        filters.isNew = true;
+                        break;
+                    case '24_hours':
+                        filters.is24Hours = true;
+                        break;
+                }
+            });
+        }
+        // Фильтр выезда
+        if (outcall === 'true') {
+            filters.outCall = true;
         }
         // Удаляем undefined значения из фильтров
         Object.keys(filters).forEach(key => {
