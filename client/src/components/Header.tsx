@@ -57,8 +57,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-  cities,
-  languages,
+  cities = [],
+  languages = [],
   selectedCity,
   selectedLanguage,
   onCityChange,
@@ -109,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({
               return city?.name || '';
             }}
           >
-            {cities.map((city) => (
+            {Array.isArray(cities) && cities.map((city) => (
               <MenuItem key={city.id} value={city.id}>
                 {city.name}
               </MenuItem>
@@ -117,11 +117,11 @@ const Header: React.FC<HeaderProps> = ({
           </StyledSelect>
 
           <StyledSelect
-            value={selectedLanguage.id}
+            value={selectedLanguage?.id || ''}
             onChange={handleLanguageChange}
             IconComponent={() => <Language sx={{ color: 'white', mr: 1 }} />}
           >
-            {languages.map((language) => (
+            {Array.isArray(languages) && languages.map((language) => (
               <MenuItem key={language.id} value={language.id}>
                 {language.name}
               </MenuItem>

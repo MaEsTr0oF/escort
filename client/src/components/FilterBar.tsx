@@ -505,7 +505,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, districts = [], onFilter
         renderValue={renderValue}
         open={false}
       >
-        <MenuItem value="">Выберите пол</MenuItem>
+        <MenuItem value="">Выберите</MenuItem>
       </StyledSelect>
 
       <FilterPopover
@@ -612,7 +612,6 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, districts = [], onFilter
         renderValue={() => 'Внешность'}
         open={false}
       >
-        <MenuItem value="">Внешность</MenuItem>
       </StyledSelect>
 
       <FilterPopover
@@ -907,10 +906,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, districts = [], onFilter
         onClick={handlePriceClick}
         displayEmpty
         IconComponent={IconComponent}
-        renderValue={(selected) => selected ? String(selected) : 'Цена'}
+        renderValue={renderValue}
         open={false}
       >
-        <MenuItem value="">Цена</MenuItem>
       </StyledSelect>
 
       <FilterPopover
@@ -967,14 +965,13 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, districts = [], onFilter
       </FilterPopover>
 
       <StyledSelect
-        value={filters.services || []}
+        value={filters.services}
         onClick={handleServicesClick}
         displayEmpty
         IconComponent={IconComponent}
         renderValue={renderValue}
         open={false}
       >
-        <MenuItem value="">Выберите услуги</MenuItem>
       </StyledSelect>
 
       <FilterPopover
@@ -1572,14 +1569,13 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, districts = [], onFilter
       </FilterPopover>
 
       <StyledSelect
-        value={filters.verification || []}
+        value={filters.verification}
         onClick={handleVerificationClick}
         displayEmpty
         IconComponent={IconComponent}
         renderValue={renderValue}
         open={false}
       >
-        <MenuItem value="">Проверка</MenuItem>
       </StyledSelect>
 
       <FilterPopover
@@ -1653,14 +1649,13 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, districts = [], onFilter
       </FilterPopover>
 
       <StyledSelect
-        value={filters.other || []}
+        value={filters.other}
         onClick={handleOtherClick}
         displayEmpty
         IconComponent={IconComponent}
         renderValue={renderValue}
         open={false}
       >
-        <MenuItem value="">Прочее</MenuItem>
       </StyledSelect>
 
       <FilterPopover
