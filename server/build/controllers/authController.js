@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createAdmin = exports.login = void 0;
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const prisma = new client_1.PrismaClient();
 const login = async (req, res) => {
     try {
@@ -17,7 +17,7 @@ const login = async (req, res) => {
         if (!admin) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        const isValidPassword = await bcryptjs_1.default.compare(password, admin.password);
+        const isValidPassword = await bcrypt_1.default.compare(password, admin.password);
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -33,7 +33,7 @@ exports.login = login;
 const createAdmin = async (req, res) => {
     try {
         const { username, password } = req.body;
-        const hashedPassword = await bcryptjs_1.default.hash(password, 10);
+        const hashedPassword = await bcrypt_1.default.hash(password, 10);
         const admin = await prisma.admin.create({
             data: {
                 username,

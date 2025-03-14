@@ -1,26 +1,29 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashedPassword = bcrypt.hashSync('admin123', 10);
+  const username = 'admin';
+  const password = 'admin123';
+  const hashedPassword = bcrypt.hashSync(password, 10);
   
   try {
-    // Удаляем существующую запись, если она есть
-    await prisma.admin.deleteMany({
-      where: { username: 'admin' }
-    });
+    // Удаляем существующего админа, если он есть
+    await prisma.admin.deleteMany({});
     
     // Создаем нового администратора
     const admin = await prisma.admin.create({
       data: {
-        username: 'admin',
+        username,
         password: hashedPassword
       }
     });
     
     console.log('Admin created:', admin);
+    console.log('Login with:');
+    console.log('Username:', username);
+    console.log('Password:', password);
     
     // Проверяем, что администратор создан
     const allAdmins = await prisma.admin.findMany();
