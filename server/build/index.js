@@ -46,6 +46,7 @@ const auth_1 = require("./middleware/auth");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const profileRoutes_1 = __importDefault(require("./routes/profileRoutes"));
 const cityRoutes_1 = __importDefault(require("./routes/cityRoutes"));
+const adminCityRoutes_1 = __importDefault(require("./routes/adminCityRoutes"));
 const settingsRoutes_1 = __importDefault(require("./routes/settingsRoutes"));
 const dashboardController = __importStar(require("./controllers/dashboardController"));
 dotenv_1.default.config();
@@ -99,12 +100,14 @@ app.use('/api/settings', settingsRoutes_1.default);
 app.use('/api/auth', authRoutes_1.default);
 // Маршруты администратора
 app.use('/api/admin', auth_1.authMiddleware);
+// Админские маршруты для городов, профилей и настроек
+app.use('/api/admin/cities', adminCityRoutes_1.default);
 // Добавляем маршрут для получения статистики дашборда
-app.get('/api/admin/dashboard/stats', auth_1.authMiddleware, async (req, res) => {
+app.get('/api/admin/dashboard/stats', async (req, res) => {
     await dashboardController.getStats(req, res);
 });
 // Добавляем маршрут для получения профилей для админки
-app.get('/api/admin/profiles', auth_1.authMiddleware, async (req, res) => {
+app.get('/api/admin/profiles', async (req, res) => {
     await profileController.getAdminProfiles(req, res);
 });
 // Serve static files from the React app
