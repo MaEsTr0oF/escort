@@ -28,7 +28,7 @@ const EditProfilePage: React.FC = () => {
   const fetchProfile = async (profileId: number) => {
     try {
       setLoading(true);
-      const response = await api.get(`/admin/profiles/${profileId}`, {
+      const response = await api.get(`/profiles/${profileId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -47,14 +47,14 @@ const EditProfilePage: React.FC = () => {
       setLoading(true);
       if (id) {
         // Обновление существующего профиля
-        await api.put(`/admin/profiles/${id}`, updatedProfile, {
+        await api.put(`/profiles/${id}`, updatedProfile, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
       } else {
         // Создание нового профиля
-        await api.post(`/admin/profiles`, updatedProfile, {
+        await api.post(`/profiles`, updatedProfile, {
           headers: {
             Authorization: `Bearer ${token}`
           }

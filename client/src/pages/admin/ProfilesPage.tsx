@@ -145,14 +145,14 @@ const ProfilesPage: React.FC = () => {
     try {
       if (selectedProfile) {
         const response = await api.put(
-          `/admin/profiles/${selectedProfile.id}`,
+          `/profiles/${selectedProfile.id}`,
           profileData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         console.log('Update response:', response.data);
       } else {
         const response = await api.post(
-          `/admin/profiles`,
+          `/profiles`,
           profileData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
