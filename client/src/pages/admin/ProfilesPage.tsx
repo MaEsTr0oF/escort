@@ -18,6 +18,7 @@ import {
   Delete as DeleteIcon,
   Check as CheckIcon,
   Block as BlockIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
 import { API_URL } from '../../config';
@@ -31,7 +32,7 @@ const ProfilesPage: React.FC = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [openEditor, setOpenEditor] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const navigate = useNavigate();
 
@@ -73,11 +74,11 @@ const ProfilesPage: React.FC = () => {
     } else {
       setSelectedProfile(null);
     }
-    setOpenEditor(true);
+    setShowEditor(true);
   };
 
   const handleCloseEditor = () => {
-    setOpenEditor(false);
+    setShowEditor(false);
     setSelectedProfile(null);
   };
 
@@ -151,67 +152,83 @@ const ProfilesPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h5">Управление анкетами</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpenEditor()}
-        >
-          Добавить анкету
-        </Button>
-      </Box>
+      {!showEditor ? (
+        // Список профилей
+        <>
+          <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5">Управление анкетами</Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => handleOpenEditor()}
+            >
+              Добавить анкету
+            </Button>
+          </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-      <Grid container spacing={3}>
-        {profiles.map((profile) => (
-          <Grid item xs={12} sm={6} md={4} key={profile.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {profile.name}, {profile.age} лет
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Город: {cities.find(c => c.id === profile.cityId)?.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Телефон: {profile.phone}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Статус: {profile.isActive ? 'Активна' : 'Неактивна'}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <IconButton onClick={() => handleOpenEditor(profile)} size="small">
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleDelete(profile.id)} size="small" color="error">
-                  <DeleteIcon />
-                </IconButton>
-                <IconButton 
-                  onClick={() => handleToggleStatus(profile)} 
-                  size="small"
-                  color={profile.isActive ? "success" : "warning"}
-                >
-                  {profile.isActive ? <CheckIcon /> : <BlockIcon />}
-                </IconButton>
-              </CardActions>
-            </Card>
+          <Grid container spacing={3}>
+            {profiles.map((profile) => (
+              <Grid item xs={12} sm={6} md={4} key={profile.id}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {profile.name}, {profile.age} лет
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Город: {cities.find(c => c.id === profile.cityId)?.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Телефон: {profile.phone}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Статус: {profile.isActive ? 'Активна' : 'Неактивна'}
+                    </Typography>
+                  </CardContent>
+                  <CardActions>
+                    <IconButton onClick={() => handleOpenEditor(profile)} size="small">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleDelete(profile.id)} size="small" color="error">
+                      <DeleteIcon />
+                    </IconButton>
+                    <IconButton 
+                      onClick={() => handleToggleStatus(profile)} 
+                      size="small"
+                      color={profile.isActive ? "success" : "warning"}
+                    >
+                      {profile.isActive ? <CheckIcon /> : <BlockIcon />}
+                    </IconButton>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
-
-      <ProfileEditor
-        profile={selectedProfile || undefined}
-        open={openEditor}
-        onClose={handleCloseEditor}
-        onSave={handleSaveProfile}
-      />
+        </>
+      ) : (
+        // Редактор профиля
+        <>
+          <Box sx={{ mb: 3 }}>
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={handleCloseEditor}
+            >
+              Вернуться к списку
+            </Button>
+          </Box>
+          
+          <ProfileEditor
+            profile={selectedProfile || undefined}
+            onClose={handleCloseEditor}
+            onSave={handleSaveProfile}
+          />
+        </>
+      )}
     </Container>
   );
 };

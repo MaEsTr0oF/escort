@@ -17,7 +17,7 @@ dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
-const port = process.env.PORT || 5002;
+const port = process.env.PORT || 5001;
 
 // Проверка подключения к базе данных
 async function checkDatabaseConnection() {
