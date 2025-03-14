@@ -31,8 +31,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../../config';
+import { api } from '../../utils/api';
 import ProfileEditor from '../../components/admin/ProfileEditor';
 import { Profile, City } from '../../types';
 
@@ -75,7 +74,7 @@ const ProfilesPage: React.FC = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/admin/profiles`, {
+      const response = await api.get('/admin/profiles', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -99,7 +98,7 @@ const ProfilesPage: React.FC = () => {
 
   const fetchCities = async () => {
     try {
-      const response = await axios.get(`${API_URL}/cities`);
+      const response = await api.get('/cities');
       setCities(response.data);
     } catch (error) {
       console.error('Error fetching cities:', error);
@@ -109,7 +108,7 @@ const ProfilesPage: React.FC = () => {
   // Функция для получения полных данных профиля
   const fetchFullProfile = async (id: number): Promise<Profile | null> => {
     try {
-      const response = await axios.get(`${API_URL}/admin/profiles/${id}`, {
+      const response = await api.get(`/admin/profiles/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -145,15 +144,15 @@ const ProfilesPage: React.FC = () => {
   const handleSaveProfile = async (profileData: Profile) => {
     try {
       if (selectedProfile) {
-        const response = await axios.put(
-          `${API_URL}/admin/profiles/${selectedProfile.id}`,
+        const response = await api.put(
+          `/admin/profiles/${selectedProfile.id}`,
           profileData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         console.log('Update response:', response.data);
       } else {
-        const response = await axios.post(
-          `${API_URL}/admin/profiles`,
+        const response = await api.post(
+          `/admin/profiles`,
           profileData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -169,7 +168,7 @@ const ProfilesPage: React.FC = () => {
 
   const handleToggleStatus = async (profile: ProfileListItem) => {
     try {
-      await axios.patch(`${API_URL}/admin/profiles/${profile.id}/toggle-active`, 
+      await api.patch(`/admin/profiles/${profile.id}/toggle-active`, 
         { isActive: !profile.isActive },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -186,7 +185,7 @@ const ProfilesPage: React.FC = () => {
     }
 
     try {
-      await axios.delete(`${API_URL}/profiles/${id}`, {
+      await api.delete(`/profiles/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -200,7 +199,7 @@ const ProfilesPage: React.FC = () => {
 
   const handleVerify = async (id: number) => {
     try {
-      const response = await axios.post(`${API_URL}/profiles/${id}/verify`, {}, {
+      const response = await api.post(`/profiles/${id}/verify`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

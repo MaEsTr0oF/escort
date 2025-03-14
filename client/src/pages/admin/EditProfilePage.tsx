@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Container, Typography, Button, CircularProgress, Alert } from '@mui/material';
 import ProfileEditor from '../../components/admin/ProfileEditor';
-import axios from 'axios';
-import { API_URL } from '../../config';
+import { api } from '../../utils/api';
 import { Profile } from '../../types';
 
 const EditProfilePage: React.FC = () => {
@@ -29,7 +28,7 @@ const EditProfilePage: React.FC = () => {
   const fetchProfile = async (profileId: number) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/admin/profiles/${profileId}`, {
+      const response = await api.get(`/admin/profiles/${profileId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -48,14 +47,14 @@ const EditProfilePage: React.FC = () => {
       setLoading(true);
       if (id) {
         // Обновление существующего профиля
-        await axios.put(`${API_URL}/admin/profiles/${id}`, updatedProfile, {
+        await api.put(`/admin/profiles/${id}`, updatedProfile, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
       } else {
         // Создание нового профиля
-        await axios.post(`${API_URL}/admin/profiles`, updatedProfile, {
+        await api.post(`/admin/profiles`, updatedProfile, {
           headers: {
             Authorization: `Bearer ${token}`
           }
