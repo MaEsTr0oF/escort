@@ -43,7 +43,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile }) => {
             Фотографии
           </Typography>
           <ImageList cols={2} gap={16}>
-            {photos.map((photo: string, index: number) => (
+            {Array.isArray(photos) && photos.map((photo: string, index: number) => (
               <ImageListItem key={index}>
                 <ProfileImage
                   src={photo}
