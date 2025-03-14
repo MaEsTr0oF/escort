@@ -1,107 +1,102 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.verifyProfile = exports.getProfilesByCity = exports.toggleProfileActive = exports.updateProfile = exports.getProfileById = exports.getAllProfiles = exports.getFilteredProfiles = exports.createProfile = void 0;
+exports.toggleProfileActive = exports.getAdminProfiles = exports.getServices = exports.verifyProfile = exports.deleteProfile = exports.updateProfile = exports.createProfile = exports.getProfileById = exports.getProfiles = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
-// Функция для создания профиля с корректной обработкой JSON полей
-const createProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getProfiles = async (req, res) => {
     try {
-        console.log("Вызвана функция createProfile с данными:", req.body);
-        
-        // Проверка обязательных полей
-        const requiredFields = ['name', 'age', 'height', 'weight', 'breastSize', 'phone', 'description', 'cityId', 'price1Hour', 'price2Hours', 'priceNight'];
-        const missingFields = requiredFields.filter(field => !req.body[field]);
-        
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: `Отсутствуют обязательные поля: ${missingFields.join(', ')}`
-            });
+        const _a = req.query, { cityId } = _a, filters = __rest(_a, ["cityId"]);
+        const where = {};
+        if (cityId) {
+            where.cityId = Number(cityId);
         }
-        
-        // Обработка JSON полей
-        let photosValue = req.body.photos || [];
-        if (Array.isArray(photosValue)) {
-            photosValue = JSON.stringify(photosValue);
-        } else if (typeof photosValue !== 'string') {
-            photosValue = JSON.stringify([]);
-        }
-        
-        let servicesValue = req.body.services || [];
-        if (Array.isArray(servicesValue)) {
-            servicesValue = JSON.stringify(servicesValue);
-        } else if (typeof servicesValue !== 'string') {
-            servicesValue = JSON.stringify([]);
-        }
-        
-        // Создание профиля
-        const profile = yield prisma.profile.create({
-            data: {
-                name: req.body.name,
-                age: Number(req.body.age),
-                height: Number(req.body.height),
-                weight: Number(req.body.weight),
-                breastSize: Number(req.body.breastSize),
-                phone: req.body.phone,
-                description: req.body.description,
-                photos: photosValue,
-                price1Hour: Number(req.body.price1Hour),
-                price2Hours: Number(req.body.price2Hours),
-                priceNight: Number(req.body.priceNight),
-                priceExpress: Number(req.body.priceExpress || 0),
-                cityId: Number(req.body.cityId),
-                district: req.body.district,
-                services: servicesValue,
-                // Дополнительные поля
-                nationality: req.body.nationality,
-                hairColor: req.body.hairColor,
-                bikiniZone: req.body.bikiniZone,
-                gender: req.body.gender || 'female',
-                orientation: req.body.orientation || 'hetero',
-                // Булевы поля с дефолтными значениями
-                isVerified: req.body.isVerified || false,
-                hasVideo: req.body.hasVideo || false,
-                hasReviews: req.body.hasReviews || false,
-                // Дополнительные булевы поля
-                inCall: req.body.inCall ?? true,
-                outCall: req.body.outCall ?? false,
-                // Другие флаги
-                isNonSmoking: req.body.isNonSmoking || false,
-                isNew: req.body.isNew ?? true,
-                isWaitingCall: req.body.isWaitingCall || false,
-                is24Hours: req.body.is24Hours || false,
-                // Поля для группы
-                isAlone: req.body.isAlone ?? true,
-                withFriend: req.body.withFriend || false,
-                withFriends: req.body.withFriends || false,
-            },
+        // Активные анкеты
+        where.isActive = true;
+        const profiles = await prisma.profile.findMany({
+            where,
             include: {
-                city: true
+                city: true,
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
-        
-        console.log("Создан профиль:", profile);
+        res.json(profiles);
+    }
+    catch (error) {
+        console.error('Error fetching profiles:', error);
+        res.status(500).json({ error: 'Failed to fetch profiles' });
+    }
+};
+exports.getProfiles = getProfiles;
+const getProfileById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const profile = await prisma.profile.findUnique({
+            where: { id: Number(id) },
+            include: {
+                city: true,
+            },
+        });
+        if (!profile) {
+            return res.status(404).json({ error: 'Profile not found' });
+        }
+        res.json(profile);
+    }
+    catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+};
+exports.getProfileById = getProfileById;
+const createProfile = async (req, res) => {
+    try {
+        const profileData = {
+            name: req.body.name,
+            age: Number(req.body.age),
+            height: Number(req.body.height),
+            weight: Number(req.body.weight),
+            breastSize: Number(req.body.breastSize),
+            phone: req.body.phone,
+            description: req.body.description,
+            photos: Array.isArray(req.body.photos) ? JSON.stringify(req.body.photos) : req.body.photos,
+            price1Hour: Number(req.body.price1Hour),
+            price2Hours: Number(req.body.price2Hours),
+            priceNight: Number(req.body.priceNight),
+            priceExpress: Number(req.body.priceExpress || 0),
+            cityId: Number(req.body.cityId),
+            district: req.body.district,
+            services: req.body.services || []
+        };
+        const profile = await prisma.profile.create({
+            data: profileData,
+            include: {
+                city: true,
+            },
+        });
         res.status(201).json(profile);
     }
     catch (error) {
-        console.error("Ошибка при создании профиля:", error);
-        res.status(500).json({
-            error: 'Не удалось создать профиль',
-            details: error.message
-        });
+        console.error('Error creating profile:', error);
+        res.status(500).json({ error: 'Failed to create profile' });
     }
-});
+};
 exports.createProfile = createProfile;
-
-// Остальной код контроллера остается без изменений
+const updateProfile = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const profile = await prisma.profile.update({
             where: { id: Number(id) },
             data: req.body,
         });
@@ -211,7 +206,7 @@ const toggleProfileActive = async (req, res) => {
         console.log(`[DEBUG] Переключение статуса профиля с ID: ${id}`);
         // Получаем текущий профиль
         const profile = await prisma.profile.findUnique({
-            where: { id: Number(id) },
+            where: { id: Number(id) }
         });
         if (!profile) {
             console.log(`[DEBUG] Профиль с ID ${id} не найден`);

@@ -242,7 +242,7 @@ export const toggleProfileActive = async (req: Request, res: Response) => {
 
     // Получаем текущий профиль
     const profile = await prisma.profile.findUnique({
-      where: { id: Number(id) },
+      where: { id: Number(id) }
     });
 
     if (!profile) {
