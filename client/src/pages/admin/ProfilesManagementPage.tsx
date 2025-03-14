@@ -41,7 +41,9 @@ const ProfilesManagementPage: React.FC = () => {
 
   const fetchProfiles = async () => {
     try {
-      const response = await api.get('/profiles');
+      console.log('Fetching profiles for management page');
+      const response = await api.get('/admin/profiles');
+      console.log('Profiles response:', response.data);
       setProfiles(response.data);
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -51,6 +53,9 @@ const ProfilesManagementPage: React.FC = () => {
   const handleVerify = async (profileId: number, currentStatus: boolean) => {
     try {
       setProcessingIds(prev => ({ ...prev, [profileId]: true }));
+      console.log(`Verifying profile ${profileId}, current status: ${currentStatus}`);
+      
+      // Используем правильный API endpoint для верификации
       await api.patch(`/admin/profiles/${profileId}/verify`, {
         isVerified: !currentStatus
       });
@@ -112,12 +117,34 @@ const ProfilesManagementPage: React.FC = () => {
 
   const handleToggleActive = async (profileId: number, currentStatus: boolean) => {
     try {
-      await api.patch(`/profiles/${profileId}/toggle-active`, {
+      setProcessingIds(prev => ({ ...prev, [profileId]: true }));
+      console.log(`Toggling status for profile ${profileId}, current status: ${currentStatus}`);
+      
+      // Используем правильный API endpoint для переключения статуса
+      await api.patch(`/admin/profiles/${profileId}/toggle-active`, {
         isActive: !currentStatus
       });
+      
+      // Обновляем список анкет
       fetchProfiles();
+      
+      // Показываем сообщение об успехе
+      setSnackbar({
+        open: true,
+        message: `Анкета ${!currentStatus ? 'активирована' : 'деактивирована'}`,
+        severity: 'success',
+      });
     } catch (error) {
       console.error('Error toggling profile status:', error);
+      
+      // Показываем сообщение об ошибке
+      setSnackbar({
+        open: true,
+        message: 'Ошибка при изменении статуса анкеты',
+        severity: 'error',
+      });
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [profileId]: false }));
     }
   };
 

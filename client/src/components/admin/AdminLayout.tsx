@@ -42,6 +42,7 @@ const AdminLayout: React.FC = () => {
   const menuItems = [
     { text: 'Панель управления', icon: <Dashboard />, path: '/admin/dashboard' },
     { text: 'Анкеты', icon: <People />, path: '/admin/profiles' },
+    { text: 'Управление анкетами', icon: <People />, path: '/admin/profiles-management' },
     { text: 'Города', icon: <LocationCity />, path: '/admin/cities' },
     { text: 'Настройки', icon: <Settings />, path: '/admin/settings' },
   ];

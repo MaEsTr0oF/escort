@@ -19,6 +19,25 @@ const EditProfilePage: React.FC = () => {
       return;
     }
 
+    // Проверяем токен через API
+    const verifyToken = async () => {
+      try {
+        console.log('Verifying token...');
+        await api.get('/admin/verify-token', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        console.log('Token is valid');
+      } catch (error) {
+        console.error('Invalid token, redirecting to login');
+        localStorage.removeItem('adminToken');
+        navigate('/admin/login');
+      }
+    };
+    
+    verifyToken();
+
     // Если есть ID, загружаем профиль
     if (id) {
       fetchProfile(parseInt(id));
@@ -29,17 +48,28 @@ const EditProfilePage: React.FC = () => {
     try {
       setLoading(true);
       console.log('Fetching profile with ID:', profileId);
+      
+      // Исправлено: используем прямой путь без префикса /admin
       const response = await api.get(`/profiles/${profileId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      
       console.log('Profile data received:', response.data);
       console.log('Photos type:', typeof response.data.photos);
       console.log('Photos value:', response.data.photos);
       console.log('Services type:', typeof response.data.services);
       console.log('Services value:', response.data.services);
-      setProfile(response.data);
+      
+      // Если данные получены правильно, устанавливаем их
+      if (response.data) {
+        console.log('Setting profile data for editor');
+        setProfile(response.data);
+      } else {
+        console.error('Received empty profile data');
+        setError('Получены пустые данные анкеты');
+      }
     } catch (error) {
       console.error('Ошибка при загрузке профиля:', error);
       setError('Не удалось загрузить данные анкеты');

@@ -13,6 +13,7 @@ import CitiesPage from './pages/admin/CitiesPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import ProfilesPage from './pages/admin/ProfilesPage';
 import EditProfilePage from './pages/admin/EditProfilePage';
+import ProfilesManagementPage from './pages/admin/ProfilesManagementPage';
 import AdminLayout from './components/admin/AdminLayout';
 
 // Создаем роутер с явным определением всех маршрутов
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
           {
             path: "profiles",
             element: <ProfilesPage />
+          },
+          {
+            path: "profiles-management",
+            element: <ProfilesManagementPage />
           },
           {
             path: "profiles/new",

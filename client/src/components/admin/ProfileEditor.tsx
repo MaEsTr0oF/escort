@@ -101,6 +101,15 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
         
         if (response.data && Array.isArray(response.data)) {
           setCities(response.data);
+          
+          // Если в формах нет выбранного города, выбираем первый из списка
+          if (response.data.length > 0 && (!formData.cityId || formData.cityId === 0)) {
+            console.log('Setting default city to:', response.data[0].id);
+            setFormData(prev => ({
+              ...prev,
+              cityId: response.data[0].id
+            }));
+          }
         } else {
           console.error('Invalid response format:', response.data);
           throw new Error('Invalid response format');
@@ -115,6 +124,12 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
           }
         }
         setError('Ошибка при загрузке списка городов');
+        
+        // Создаем фейковый список городов для предотвращения ошибок в интерфейсе
+        setCities([
+          { id: 1, name: 'Москва' },
+          { id: 2, name: 'Санкт-Петербург' }
+        ]);
       } finally {
         setLoading(false);
       }
@@ -125,34 +140,66 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     // Инициализируем данные формы из profile, если он передан
     if (profile) {
       console.log('Initializing form data from profile:', profile);
-      setFormData(profile);
       
-      // Обработка фотографий
+      // Создаем безопасную копию данных профиля
+      const safeProfile = { ...profile };
+      
+      // Проверяем и устанавливаем фотографии
       try {
         let photosArray: string[] = [];
         if (profile.photos) {
+          console.log('Processing photos from profile:', profile.photos);
           if (typeof profile.photos === 'string') {
             try {
               photosArray = JSON.parse(profile.photos);
               console.log('Successfully parsed photos from JSON string:', photosArray);
             } catch (e) {
-              console.error('Error parsing photos JSON:', e);
+              console.error('Error parsing photos JSON, setting as empty array:', e);
               photosArray = [];
+              // Исправляем photos в safeProfile
+              safeProfile.photos = '[]';
             }
           } else if (Array.isArray(profile.photos)) {
             photosArray = profile.photos;
+            // Преобразуем массив обратно в JSON-строку для safeProfile
+            safeProfile.photos = JSON.stringify(profile.photos);
             console.log('Using photos array directly:', photosArray);
           }
+        } else {
+          // Если photos отсутствует, устанавливаем пустой массив
+          safeProfile.photos = '[]';
         }
         setPhotos(photosArray);
       } catch (e) {
         console.error('Error processing photos:', e);
         setPhotos([]);
+        safeProfile.photos = '[]';
       }
+      
+      // Проверяем и устанавливаем сервисы
+      try {
+        if (profile.services) {
+          console.log('Processing services from profile:', profile.services);
+          if (typeof profile.services !== 'string') {
+            // Если services не строка, преобразуем в JSON-строку
+            safeProfile.services = JSON.stringify(profile.services || []);
+          }
+        } else {
+          // Если services отсутствует, устанавливаем пустой массив
+          safeProfile.services = '[]';
+        }
+      } catch (e) {
+        console.error('Error processing services:', e);
+        safeProfile.services = '[]';
+      }
+      
+      // Устанавливаем обработанные данные профиля
+      console.log('Setting form data with safe profile:', safeProfile);
+      setFormData(safeProfile);
     }
 
     fetchCities();
-  }, [profile, profileId]);
+  }, [profile, profileId, formData.cityId]);
 
   useEffect(() => {
     console.log('Cities state updated:', cities);
