@@ -84,19 +84,37 @@ const ProfilesPage: React.FC = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
+      setError('');
+      console.log('Загрузка списка анкет...');
+      
+      // Проверяем, есть ли токен
+      if (!token) {
+        console.error('Отсутствует токен авторизации');
+        navigate('/admin/login');
+        return;
+      }
+      
       const response = await api.get('/admin/profiles', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      // Проверка, является ли response.data массивом
-      if (Array.isArray(response.data)) {
-        setProfiles(response.data);
+      // Проверяем ответ
+      if (response.status >= 200 && response.status < 300) {
+        console.log('Успешно получены данные анкет:', response.data);
+        
+        // Проверка, является ли response.data массивом
+        if (Array.isArray(response.data)) {
+          console.log(`Получено ${response.data.length} анкет`);
+          setProfiles(response.data);
+        } else {
+          console.error('Expected array but got:', typeof response.data, response.data);
+          setProfiles([]);
+          setError('Данные профилей в неверном формате');
+        }
       } else {
-        console.error('Expected array but got:', typeof response.data, response.data);
-        setProfiles([]);
-        setError('Данные профилей в неверном формате');
+        throw new Error(`Ошибка API: ${response.status}`);
       }
     } catch (error) {
       console.error('Error fetching profiles:', error);
@@ -190,20 +208,41 @@ const ProfilesPage: React.FC = () => {
     try {
       setProcessingIds(prev => ({ ...prev, [profile.id]: true }));
       setError('');
+      console.log(`Переключение статуса для профиля ${profile.id}, текущий статус: ${profile.isActive}`);
       
-      await api.patch(`/admin/profiles/${profile.id}/toggle-active`, 
+      // Проверяем, есть ли токен
+      if (!token) {
+        console.error('Отсутствует токен авторизации');
+        navigate('/admin/login');
+        return;
+      }
+      
+      // Используем правильный эндпоинт с токеном авторизации
+      const response = await api.patch(`/admin/profiles/${profile.id}/toggle-active`, 
         { isActive: !profile.isActive },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          } 
+        }
       );
       
-      // Показываем уведомление об успехе
-      setSnackbar({
-        open: true,
-        message: `Анкета ${!profile.isActive ? 'активирована' : 'деактивирована'}`,
-        severity: 'success',
-      });
-      
-      fetchProfiles();
+      // Проверяем успешность ответа
+      if (response.status >= 200 && response.status < 300) {
+        console.log('Успешное переключение статуса, ответ:', response.data);
+        
+        // Показываем уведомление об успехе
+        setSnackbar({
+          open: true,
+          message: `Анкета ${!profile.isActive ? 'активирована' : 'деактивирована'}`,
+          severity: 'success',
+        });
+        
+        // Обновляем список анкет
+        fetchProfiles();
+      } else {
+        throw new Error(`Ошибка API: ${response.status}`);
+      }
     } catch (error) {
       console.error('Error toggling status:', error);
       setError('Ошибка при изменении статуса анкеты');
@@ -241,25 +280,43 @@ const ProfilesPage: React.FC = () => {
     try {
       setProcessingIds(prev => ({ ...prev, [id]: true }));
       setError('');
+      console.log(`Верификация профиля с ID ${id}`);
       
-      const response = await api.patch(`/admin/profiles/${id}/verify`, {}, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      
-      // Находим профиль в текущем списке
+      // Находим профиль в текущем списке для определения текущего статуса
       const profile = profiles.find(p => p.id === id);
-      const newVerifiedStatus = !profile?.isVerified;
+      if (!profile) {
+        throw new Error('Профиль не найден');
+      }
       
-      // Показываем уведомление об успехе
-      setSnackbar({
-        open: true,
-        message: `Анкета ${newVerifiedStatus ? 'проверена' : 'отмечена как непроверенная'}`,
-        severity: 'success',
-      });
+      const newVerifiedStatus = !profile.isVerified;
+      console.log(`Текущий статус верификации: ${profile.isVerified}, новый статус: ${newVerifiedStatus}`);
       
-      fetchProfiles();
+      // Используем правильный эндпоинт с токеном авторизации
+      const response = await api.patch(`/admin/profiles/${id}/verify`, 
+        { isVerified: newVerifiedStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      
+      // Проверяем успешность ответа
+      if (response.status >= 200 && response.status < 300) {
+        console.log('Успешная верификация, получен ответ:', response.data);
+        
+        // Показываем уведомление об успехе
+        setSnackbar({
+          open: true,
+          message: `Анкета ${newVerifiedStatus ? 'проверена' : 'отмечена как непроверенная'}`,
+          severity: 'success',
+        });
+        
+        // Обновляем список анкет
+        fetchProfiles();
+      } else {
+        throw new Error(`Ошибка API: ${response.status}`);
+      }
     } catch (error) {
       console.error("Ошибка при изменении статуса верификации:", error);
       setError("Ошибка при изменении статуса верификации");
@@ -310,6 +367,12 @@ const ProfilesPage: React.FC = () => {
             </Button>
           </Box>
 
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Typography variant="body1">
+              <strong>Верификация анкет:</strong> Нажмите на статус &quot;Проверено/Не проверено&quot; или используйте кнопку <VerifyIcon fontSize="small" sx={{ verticalAlign: 'middle' }}/> для верификации анкеты. Верифицированные анкеты помечаются зеленым цветом.
+            </Typography>
+          </Alert>
+
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
@@ -343,12 +406,22 @@ const ProfilesPage: React.FC = () => {
                       <Typography variant="h6">
                         {profile.name}, {profile.age} лет
                       </Typography>
-                      <Chip
-                        size="small"
-                        icon={<VerifyIcon />}
-                        label={profile.isVerified ? "Проверено" : "Не проверено"}
-                        color={profile.isVerified ? "success" : "warning"}
-                      />
+                      <Tooltip title={profile.isVerified ? "Нажмите, чтобы отменить верификацию" : "Нажмите, чтобы верифицировать анкету"}>
+                        <Chip
+                          size="small"
+                          icon={<VerifyIcon />}
+                          label={profile.isVerified ? "Проверено" : "Не проверено"}
+                          color={profile.isVerified ? "success" : "warning"}
+                          onClick={() => handleVerify(profile.id)}
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              opacity: 0.9,
+                              transform: 'scale(1.05)',
+                            }
+                          }}
+                        />
+                      </Tooltip>
                     </Box>
                     <Divider sx={{ my: 1 }} />
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -405,6 +478,15 @@ const ProfilesPage: React.FC = () => {
                         size="small"
                         color={profile.isVerified ? "success" : "warning"}
                         disabled={processingIds[profile.id]}
+                        sx={{ 
+                          transition: 'all 0.2s',
+                          animation: processingIds[profile.id] ? 'none' : 'pulse 1.5s infinite',
+                          '@keyframes pulse': {
+                            '0%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)' },
+                          }
+                        }}
                       >
                         {processingIds[profile.id] ? (
                           <CircularProgress size={20} color="inherit" />

@@ -49,8 +49,8 @@ const EditProfilePage: React.FC = () => {
       setLoading(true);
       console.log('Fetching profile with ID:', profileId);
       
-      // Исправлено: используем прямой путь без префикса /admin
-      const response = await api.get(`/profiles/${profileId}`, {
+      // Используем оба пути - сначала с /admin как источник данных для редактирования
+      const response = await api.get(`/admin/profiles/${profileId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -65,7 +65,50 @@ const EditProfilePage: React.FC = () => {
       // Если данные получены правильно, устанавливаем их
       if (response.data) {
         console.log('Setting profile data for editor');
-        setProfile(response.data);
+        
+        // Проверяем и обрабатываем photos и services если они есть
+        const profileData = { ...response.data };
+        
+        // Обработка photos
+        if (profileData.photos) {
+          try {
+            // Если photos не строка JSON, конвертируем в строку
+            if (typeof profileData.photos !== 'string') {
+              console.log('Converting photos array to JSON string');
+              profileData.photos = JSON.stringify(profileData.photos);
+            } else {
+              // Проверяем, что photos - валидный JSON
+              JSON.parse(profileData.photos);
+            }
+          } catch (e) {
+            console.error('Error processing photos:', e);
+            profileData.photos = '[]';
+          }
+        } else {
+          profileData.photos = '[]';
+        }
+        
+        // Обработка services
+        if (profileData.services) {
+          try {
+            // Если services не строка JSON, конвертируем в строку
+            if (typeof profileData.services !== 'string') {
+              console.log('Converting services array to JSON string');
+              profileData.services = JSON.stringify(profileData.services);
+            } else {
+              // Проверяем, что services - валидный JSON
+              JSON.parse(profileData.services);
+            }
+          } catch (e) {
+            console.error('Error processing services:', e);
+            profileData.services = '[]';
+          }
+        } else {
+          profileData.services = '[]';
+        }
+        
+        console.log('Processed profile data:', profileData);
+        setProfile(profileData);
       } else {
         console.error('Received empty profile data');
         setError('Получены пустые данные анкеты');

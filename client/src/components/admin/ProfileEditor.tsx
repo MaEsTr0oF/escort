@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Box,
   TextField,
@@ -51,41 +51,126 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<string[]>(profile?.photos ? JSON.parse(profile.photos) : []);
-  const [formData, setFormData] = useState<Partial<Profile>>(profile || {
-    name: '',
-    age: 18,
-    height: 165,
-    weight: 55,
-    breastSize: 3,
-    phone: '',
-    description: '',
-    photos: '[]',
-    price1Hour: 3000,
-    price2Hours: 6000,
-    priceNight: 15000,
-    priceExpress: 2000,
-    services: '[]',
-    cityId: 1,
-    district: '',
-    isVerified: false,
-    hasVideo: false,
-    hasReviews: false,
-    inCall: true,
-    outCall: false,
-    isNonSmoking: false,
-    isNew: true,
-    isWaitingCall: false,
-    is24Hours: false,
-    isAlone: true,
-    withFriend: false,
-    withFriends: false,
-    gender: 'female',
-    orientation: 'hetero',
-    nationality: 'slavic',
-    hairColor: 'blonde',
-    bikiniZone: 'smooth',
-  });
+  
+  // Обрабатываем photos при инициализации
+  const initialPhotos = useMemo(() => {
+    if (!profile?.photos) return [];
+    try {
+      if (typeof profile.photos === 'string') {
+        return JSON.parse(profile.photos);
+      } else if (Array.isArray(profile.photos)) {
+        return profile.photos;
+      }
+    } catch (e) {
+      console.error('Error parsing photos in ProfileEditor:', e);
+    }
+    return [];
+  }, [profile?.photos]);
+  
+  const [photos, setPhotos] = useState<string[]>(initialPhotos);
+  
+  // Обрабатываем данные профиля при инициализации
+  const initialFormData = useMemo(() => {
+    console.log('Initializing form data from profile:', profile);
+    
+    if (!profile) {
+      // Возвращаем объект с значениями по умолчанию, если профиль не передан
+      return {
+        name: '',
+        age: 18,
+        height: 165,
+        weight: 55,
+        breastSize: 3,
+        phone: '',
+        description: '',
+        photos: '[]',
+        price1Hour: 3000,
+        price2Hours: 6000,
+        priceNight: 15000,
+        priceExpress: 2000,
+        services: '[]',
+        cityId: 1,
+        district: '',
+        isVerified: false,
+        hasVideo: false,
+        hasReviews: false,
+        inCall: true,
+        outCall: false,
+        isNonSmoking: false,
+        isNew: true,
+        isWaitingCall: false,
+        is24Hours: false,
+        isAlone: true,
+        withFriend: false,
+        withFriends: false,
+        gender: 'female',
+        orientation: 'hetero',
+        nationality: 'slavic',
+        hairColor: 'blonde',
+        bikiniZone: 'smooth',
+      };
+    }
+    
+    // Создаем безопасную копию данных профиля
+    const safeProfile = { ...profile };
+    
+    // Обработка photos
+    try {
+      if (safeProfile.photos) {
+        if (typeof safeProfile.photos === 'string') {
+          // Проверяем, что это валидный JSON
+          try {
+            JSON.parse(safeProfile.photos);
+          } catch (e) {
+            console.error('Error parsing photos JSON, resetting:', e);
+            safeProfile.photos = '[]';
+          }
+        } else if (Array.isArray(safeProfile.photos)) {
+          // Преобразуем массив в JSON-строку
+          safeProfile.photos = JSON.stringify(safeProfile.photos);
+        }
+      } else {
+        safeProfile.photos = '[]';
+      }
+    } catch (e) {
+      console.error('Error processing photos:', e);
+      safeProfile.photos = '[]';
+    }
+    
+    // Обработка services
+    try {
+      if (safeProfile.services) {
+        if (typeof safeProfile.services === 'string') {
+          // Проверяем, что это валидный JSON
+          try {
+            JSON.parse(safeProfile.services);
+          } catch (e) {
+            console.error('Error parsing services JSON, resetting:', e);
+            safeProfile.services = '[]';
+          }
+        } else if (Array.isArray(safeProfile.services)) {
+          // Преобразуем массив в JSON-строку
+          safeProfile.services = JSON.stringify(safeProfile.services);
+        }
+      } else {
+        safeProfile.services = '[]';
+      }
+    } catch (e) {
+      console.error('Error processing services:', e);
+      safeProfile.services = '[]';
+    }
+    
+    console.log('Initialized safe profile:', safeProfile);
+    return safeProfile;
+  }, [profile]);
+  
+  const [formData, setFormData] = useState<Partial<Profile>>(initialFormData);
+
+  // Обновляем formData при изменении initialFormData
+  useEffect(() => {
+    console.log('initialFormData changed, updating formData');
+    setFormData(initialFormData);
+  }, [initialFormData]);
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -93,11 +178,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
         setLoading(true);
         setError(null);
         console.log('Fetching cities in ProfileEditor...');
-        console.log('API URL:', api.defaults.baseURL);
         
         const response = await api.get('/cities');
         console.log('Cities response status:', response.status);
-        console.log('Cities response data:', response.data);
+        console.log('Cities data length:', response.data?.length);
         
         if (response.data && Array.isArray(response.data)) {
           setCities(response.data);
@@ -116,13 +200,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
         }
       } catch (err) {
         console.error('Error fetching cities:', err);
-        if (err && typeof err === 'object' && 'response' in err) {
-          const error = err as { response?: { data: any; status: number } };
-          if (error.response) {
-            console.error('Error response:', error.response.data);
-            console.error('Error status:', error.response.status);
-          }
-        }
         setError('Ошибка при загрузке списка городов');
         
         // Создаем фейковый список городов для предотвращения ошибок в интерфейсе
@@ -135,71 +212,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
       }
     };
 
-    console.log('ProfileEditor props:', { profile, profileId });
-
-    // Инициализируем данные формы из profile, если он передан
-    if (profile) {
-      console.log('Initializing form data from profile:', profile);
-      
-      // Создаем безопасную копию данных профиля
-      const safeProfile = { ...profile };
-      
-      // Проверяем и устанавливаем фотографии
-      try {
-        let photosArray: string[] = [];
-        if (profile.photos) {
-          console.log('Processing photos from profile:', profile.photos);
-          if (typeof profile.photos === 'string') {
-            try {
-              photosArray = JSON.parse(profile.photos);
-              console.log('Successfully parsed photos from JSON string:', photosArray);
-            } catch (e) {
-              console.error('Error parsing photos JSON, setting as empty array:', e);
-              photosArray = [];
-              // Исправляем photos в safeProfile
-              safeProfile.photos = '[]';
-            }
-          } else if (Array.isArray(profile.photos)) {
-            photosArray = profile.photos;
-            // Преобразуем массив обратно в JSON-строку для safeProfile
-            safeProfile.photos = JSON.stringify(profile.photos);
-            console.log('Using photos array directly:', photosArray);
-          }
-        } else {
-          // Если photos отсутствует, устанавливаем пустой массив
-          safeProfile.photos = '[]';
-        }
-        setPhotos(photosArray);
-      } catch (e) {
-        console.error('Error processing photos:', e);
-        setPhotos([]);
-        safeProfile.photos = '[]';
-      }
-      
-      // Проверяем и устанавливаем сервисы
-      try {
-        if (profile.services) {
-          console.log('Processing services from profile:', profile.services);
-          if (typeof profile.services !== 'string') {
-            // Если services не строка, преобразуем в JSON-строку
-            safeProfile.services = JSON.stringify(profile.services || []);
-          }
-        } else {
-          // Если services отсутствует, устанавливаем пустой массив
-          safeProfile.services = '[]';
-        }
-      } catch (e) {
-        console.error('Error processing services:', e);
-        safeProfile.services = '[]';
-      }
-      
-      // Устанавливаем обработанные данные профиля
-      console.log('Setting form data with safe profile:', safeProfile);
-      setFormData(safeProfile);
-    }
-
+    // Вызываем загрузку городов
     fetchCities();
-  }, [profile, profileId, formData.cityId]);
+  }, [formData.cityId]);
 
   useEffect(() => {
     console.log('Cities state updated:', cities);
@@ -340,14 +355,22 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     try {
+      console.log('Handling service change for:', service);
+      console.log('Current services data:', formData.services);
+      
+      // Получаем текущий список сервисов
       let currentServices: string[] = [];
       
       if (formData.services) {
         if (typeof formData.services === 'string') {
           try {
             currentServices = JSON.parse(formData.services);
+            if (!Array.isArray(currentServices)) {
+              console.warn('Services parsed but not an array, resetting to empty array');
+              currentServices = [];
+            }
           } catch (e) {
-            console.error('Error parsing services JSON:', e);
+            console.error('Error parsing services JSON in handleServiceChange:', e);
             currentServices = [];
           }
         } else if (Array.isArray(formData.services)) {
@@ -355,14 +378,17 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
         }
       }
       
-      console.log('Current services before change:', currentServices);
+      console.log('Current services array:', currentServices);
+      console.log('Checked status:', event.target.checked);
       
+      // Обновляем список сервисов
       const newServices = event.target.checked
         ? [...currentServices, service]
         : currentServices.filter((s: string) => s !== service);
       
-      console.log('New services after change:', newServices);
+      console.log('New services array:', newServices);
       
+      // Обновляем данные формы
       setFormData({
         ...formData,
         services: JSON.stringify(newServices),
