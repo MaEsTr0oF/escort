@@ -51,6 +51,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>(profile?.photos ? JSON.parse(profile.photos) : []);
   const [formData, setFormData] = useState<Partial<Profile>>(profile || {
     name: '',
     age: 18,
@@ -59,12 +60,12 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     breastSize: 3,
     phone: '',
     description: '',
-    photos: [],
+    photos: '[]',
     price1Hour: 3000,
     price2Hours: 6000,
     priceNight: 15000,
     priceExpress: 2000,
-    services: [],
+    services: '[]',
     cityId: 1,
     district: '',
     isVerified: false,
@@ -85,8 +86,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     hairColor: 'blonde',
     bikiniZone: 'smooth',
   });
-
-  const [photos, setPhotos] = useState<string[]>(profile?.photos || []);
 
   useEffect(() => {
     const fetchCities = async () => {
@@ -129,7 +128,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
           const response = await api.get(`/profiles/${profileId}`);
           if (response.data) {
             setFormData(response.data);
-            setPhotos(response.data.photos || []);
+            setPhotos(response.data.photos ? JSON.parse(response.data.photos) : []);
           }
         } catch (err) {
           console.error('Error fetching profile:', err);
@@ -199,24 +198,46 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     });
   };
 
-  const handlePhotoAdd = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      try {
-        const compressedImage = await compressImage(file);
-        
-        if (photos.length < MAX_PHOTOS) {
-          const newPhotos = [...photos, compressedImage];
-          setPhotos(newPhotos);
-          setFormData({
-            ...formData,
-            photos: newPhotos,
-          });
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    if (photos.length + files.length > MAX_PHOTOS) {
+      setError(`Можно загрузить максимум ${MAX_PHOTOS} фотографий`);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const newPhotos: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        const response = await api.post('/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        if (response.data.url) {
+          newPhotos.push(response.data.url);
         }
-      } catch (error) {
-        console.error('Ошибка при сжатии изображения:', error);
-        setError('Не удалось обработать изображение');
       }
+
+      setPhotos([...photos, ...newPhotos]);
+      setFormData({
+        ...formData,
+        photos: JSON.stringify([...photos, ...newPhotos])
+      });
+    } catch (error) {
+      console.error('Error uploading photos:', error);
+      setError('Ошибка при загрузке фотографий');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -225,7 +246,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     setPhotos(newPhotos);
     setFormData({
       ...formData,
-      photos: newPhotos,
+      photos: JSON.stringify(newPhotos)
     });
   };
 
@@ -256,17 +277,18 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     });
   };
 
-  const handleServiceChange = (service: string) => (
+  const handleServiceChange = (
+    service: string,
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const currentServices = formData.services || [];
+    const currentServices = formData.services ? JSON.parse(formData.services) : [];
     const newServices = event.target.checked
       ? [...currentServices, service]
-      : currentServices.filter(s => s !== service);
-    
+      : currentServices.filter((s: string) => s !== service);
+
     setFormData({
       ...formData,
-      services: newServices,
+      services: JSON.stringify(newServices),
     });
   };
 
@@ -291,7 +313,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
 
     const missingFields = requiredFields.filter(field => {
       const value = formData[field as keyof Profile];
-      return !value || (Array.isArray(value) && value.length === 0);
+      return !value || (field === 'photos' && photos.length === 0);
     });
 
     if (missingFields.length > 0) {
@@ -325,8 +347,16 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     }
 
     setError(null);
-    console.log('Sending profile data:', formData);
-    onSave(formData as Profile);
+
+    // Преобразуем массивы в JSON строки перед отправкой
+    const dataToSend: Profile = {
+      ...formData as Profile,
+      photos: JSON.stringify(photos),
+      services: formData.services || '[]'
+    };
+
+    console.log('Sending profile data:', dataToSend);
+    onSave(dataToSend);
   };
 
   return (
@@ -358,7 +388,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                 accept="image/*"
                 style={{ display: 'none' }}
                 ref={fileInputRef}
-                onChange={handlePhotoAdd}
+                onChange={handlePhotoUpload}
               />
               <Grid container spacing={2}>
                 {photos.map((photo, index) => (
@@ -615,7 +645,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('classic')}
-                      onChange={handleServiceChange('classic')}
+                      onChange={(e) => handleServiceChange('classic', e)}
                     />
                   }
                   label={serviceTranslations['classic']}
@@ -624,7 +654,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('anal')}
-                      onChange={handleServiceChange('anal')}
+                      onChange={(e) => handleServiceChange('anal', e)}
                     />
                   }
                   label={serviceTranslations['anal']}
@@ -633,7 +663,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('lesbian')}
-                      onChange={handleServiceChange('lesbian')}
+                      onChange={(e) => handleServiceChange('lesbian', e)}
                     />
                   }
                   label={serviceTranslations['lesbian']}
@@ -642,7 +672,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('group_mmf')}
-                      onChange={handleServiceChange('group_mmf')}
+                      onChange={(e) => handleServiceChange('group_mmf', e)}
                     />
                   }
                   label={serviceTranslations['group_mmf']}
@@ -651,7 +681,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('group_ffm')}
-                      onChange={handleServiceChange('group_ffm')}
+                      onChange={(e) => handleServiceChange('group_ffm', e)}
                     />
                   }
                   label={serviceTranslations['group_ffm']}
@@ -660,7 +690,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('with_toys')}
-                      onChange={handleServiceChange('with_toys')}
+                      onChange={(e) => handleServiceChange('with_toys', e)}
                     />
                   }
                   label={serviceTranslations['with_toys']}
@@ -669,7 +699,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('in_car')}
-                      onChange={handleServiceChange('in_car')}
+                      onChange={(e) => handleServiceChange('in_car', e)}
                     />
                   }
                   label={serviceTranslations['in_car']}
@@ -686,7 +716,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('blowjob_with_condom')}
-                      onChange={handleServiceChange('blowjob_with_condom')}
+                      onChange={(e) => handleServiceChange('blowjob_with_condom', e)}
                     />
                   }
                   label={serviceTranslations['blowjob_with_condom']}
@@ -695,7 +725,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('blowjob_without_condom')}
-                      onChange={handleServiceChange('blowjob_without_condom')}
+                      onChange={(e) => handleServiceChange('blowjob_without_condom', e)}
                     />
                   }
                   label={serviceTranslations['blowjob_without_condom']}
@@ -704,7 +734,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('deep_blowjob')}
-                      onChange={handleServiceChange('deep_blowjob')}
+                      onChange={(e) => handleServiceChange('deep_blowjob', e)}
                     />
                   }
                   label={serviceTranslations['deep_blowjob']}
@@ -713,7 +743,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('car_blowjob')}
-                      onChange={handleServiceChange('car_blowjob')}
+                      onChange={(e) => handleServiceChange('car_blowjob', e)}
                     />
                   }
                   label={serviceTranslations['car_blowjob']}
@@ -722,7 +752,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('anilingus_to_client')}
-                      onChange={handleServiceChange('anilingus_to_client')}
+                      onChange={(e) => handleServiceChange('anilingus_to_client', e)}
                     />
                   }
                   label={serviceTranslations['anilingus_to_client']}
@@ -731,7 +761,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('fisting_to_client')}
-                      onChange={handleServiceChange('fisting_to_client')}
+                      onChange={(e) => handleServiceChange('fisting_to_client', e)}
                     />
                   }
                   label={serviceTranslations['fisting_to_client']}
@@ -740,7 +770,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('kisses')}
-                      onChange={handleServiceChange('kisses')}
+                      onChange={(e) => handleServiceChange('kisses', e)}
                     />
                   }
                   label={serviceTranslations['kisses']}
@@ -757,7 +787,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('light_domination')}
-                      onChange={handleServiceChange('light_domination')}
+                      onChange={(e) => handleServiceChange('light_domination', e)}
                     />
                   }
                   label={serviceTranslations['light_domination']}
@@ -766,7 +796,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('mistress')}
-                      onChange={handleServiceChange('mistress')}
+                      onChange={(e) => handleServiceChange('mistress', e)}
                     />
                   }
                   label={serviceTranslations['mistress']}
@@ -775,7 +805,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('flogging')}
-                      onChange={handleServiceChange('flogging')}
+                      onChange={(e) => handleServiceChange('flogging', e)}
                     />
                   }
                   label={serviceTranslations['flogging']}
@@ -784,7 +814,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('trampling')}
-                      onChange={handleServiceChange('trampling')}
+                      onChange={(e) => handleServiceChange('trampling', e)}
                     />
                   }
                   label={serviceTranslations['trampling']}
@@ -793,7 +823,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('face_sitting')}
-                      onChange={handleServiceChange('face_sitting')}
+                      onChange={(e) => handleServiceChange('face_sitting', e)}
                     />
                   }
                   label={serviceTranslations['face_sitting']}
@@ -802,7 +832,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('strapon')}
-                      onChange={handleServiceChange('strapon')}
+                      onChange={(e) => handleServiceChange('strapon', e)}
                     />
                   }
                   label={serviceTranslations['strapon']}
@@ -811,7 +841,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('bondage')}
-                      onChange={handleServiceChange('bondage')}
+                      onChange={(e) => handleServiceChange('bondage', e)}
                     />
                   }
                   label={serviceTranslations['bondage']}
@@ -820,7 +850,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('slave')}
-                      onChange={handleServiceChange('slave')}
+                      onChange={(e) => handleServiceChange('slave', e)}
                     />
                   }
                   label={serviceTranslations['slave']}
@@ -829,7 +859,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('role_play')}
-                      onChange={handleServiceChange('role_play')}
+                      onChange={(e) => handleServiceChange('role_play', e)}
                     />
                   }
                   label={serviceTranslations['role_play']}
@@ -838,7 +868,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('foot_fetish')}
-                      onChange={handleServiceChange('foot_fetish')}
+                      onChange={(e) => handleServiceChange('foot_fetish', e)}
                     />
                   }
                   label={serviceTranslations['foot_fetish']}
@@ -847,7 +877,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('golden_rain_out')}
-                      onChange={handleServiceChange('golden_rain_out')}
+                      onChange={(e) => handleServiceChange('golden_rain_out', e)}
                     />
                   }
                   label={serviceTranslations['golden_rain_out']}
@@ -856,7 +886,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('golden_rain_in')}
-                      onChange={handleServiceChange('golden_rain_in')}
+                      onChange={(e) => handleServiceChange('golden_rain_in', e)}
                     />
                   }
                   label={serviceTranslations['golden_rain_in']}
@@ -865,7 +895,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('copro_out')}
-                      onChange={handleServiceChange('copro_out')}
+                      onChange={(e) => handleServiceChange('copro_out', e)}
                     />
                   }
                   label={serviceTranslations['copro_out']}
@@ -874,7 +904,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('copro_in')}
-                      onChange={handleServiceChange('copro_in')}
+                      onChange={(e) => handleServiceChange('copro_in', e)}
                     />
                   }
                   label={serviceTranslations['copro_in']}
@@ -883,7 +913,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('enema')}
-                      onChange={handleServiceChange('enema')}
+                      onChange={(e) => handleServiceChange('enema', e)}
                     />
                   }
                   label={serviceTranslations['enema']}
@@ -900,7 +930,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('relaxing')}
-                      onChange={handleServiceChange('relaxing')}
+                      onChange={(e) => handleServiceChange('relaxing', e)}
                     />
                   }
                   label={serviceTranslations['relaxing']}
@@ -909,7 +939,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('professional')}
-                      onChange={handleServiceChange('professional')}
+                      onChange={(e) => handleServiceChange('professional', e)}
                     />
                   }
                   label={serviceTranslations['professional']}
@@ -918,7 +948,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('body_massage')}
-                      onChange={handleServiceChange('body_massage')}
+                      onChange={(e) => handleServiceChange('body_massage', e)}
                     />
                   }
                   label={serviceTranslations['body_massage']}
@@ -927,7 +957,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('lingam_massage')}
-                      onChange={handleServiceChange('lingam_massage')}
+                      onChange={(e) => handleServiceChange('lingam_massage', e)}
                     />
                   }
                   label={serviceTranslations['lingam_massage']}
@@ -936,7 +966,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('four_hands')}
-                      onChange={handleServiceChange('four_hands')}
+                      onChange={(e) => handleServiceChange('four_hands', e)}
                     />
                   }
                   label={serviceTranslations['four_hands']}
@@ -945,7 +975,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('urological')}
-                      onChange={handleServiceChange('urological')}
+                      onChange={(e) => handleServiceChange('urological', e)}
                     />
                   }
                   label={serviceTranslations['urological']}
@@ -962,7 +992,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('strip_pro')}
-                      onChange={handleServiceChange('strip_pro')}
+                      onChange={(e) => handleServiceChange('strip_pro', e)}
                     />
                   }
                   label={serviceTranslations['strip_pro']}
@@ -971,7 +1001,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('strip_amateur')}
-                      onChange={handleServiceChange('strip_amateur')}
+                      onChange={(e) => handleServiceChange('strip_amateur', e)}
                     />
                   }
                   label={serviceTranslations['strip_amateur']}
@@ -980,7 +1010,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('belly_dance')}
-                      onChange={handleServiceChange('belly_dance')}
+                      onChange={(e) => handleServiceChange('belly_dance', e)}
                     />
                   }
                   label={serviceTranslations['belly_dance']}
@@ -989,7 +1019,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('twerk')}
-                      onChange={handleServiceChange('twerk')}
+                      onChange={(e) => handleServiceChange('twerk', e)}
                     />
                   }
                   label={serviceTranslations['twerk']}
@@ -998,7 +1028,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('lesbian_show')}
-                      onChange={handleServiceChange('lesbian_show')}
+                      onChange={(e) => handleServiceChange('lesbian_show', e)}
                     />
                   }
                   label={serviceTranslations['lesbian_show']}
@@ -1015,7 +1045,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('sex_chat')}
-                      onChange={handleServiceChange('sex_chat')}
+                      onChange={(e) => handleServiceChange('sex_chat', e)}
                     />
                   }
                   label={serviceTranslations['sex_chat']}
@@ -1024,7 +1054,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('phone_sex')}
-                      onChange={handleServiceChange('phone_sex')}
+                      onChange={(e) => handleServiceChange('phone_sex', e)}
                     />
                   }
                   label={serviceTranslations['phone_sex']}
@@ -1033,7 +1063,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('video_sex')}
-                      onChange={handleServiceChange('video_sex')}
+                      onChange={(e) => handleServiceChange('video_sex', e)}
                     />
                   }
                   label={serviceTranslations['video_sex']}
@@ -1042,7 +1072,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('photo_video')}
-                      onChange={handleServiceChange('photo_video')}
+                      onChange={(e) => handleServiceChange('photo_video', e)}
                     />
                   }
                   label={serviceTranslations['photo_video']}
@@ -1059,7 +1089,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('invite_girlfriend')}
-                      onChange={handleServiceChange('invite_girlfriend')}
+                      onChange={(e) => handleServiceChange('invite_girlfriend', e)}
                     />
                   }
                   label={serviceTranslations['invite_girlfriend']}
@@ -1068,7 +1098,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('invite_friend')}
-                      onChange={handleServiceChange('invite_friend')}
+                      onChange={(e) => handleServiceChange('invite_friend', e)}
                     />
                   }
                   label={serviceTranslations['invite_friend']}
@@ -1085,7 +1115,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('escort')}
-                      onChange={handleServiceChange('escort')}
+                      onChange={(e) => handleServiceChange('escort', e)}
                     />
                   }
                   label={serviceTranslations['escort']}
@@ -1094,7 +1124,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('photoshoot')}
-                      onChange={handleServiceChange('photoshoot')}
+                      onChange={(e) => handleServiceChange('photoshoot', e)}
                     />
                   }
                   label={serviceTranslations['photoshoot']}
@@ -1103,7 +1133,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
                   control={
                     <Checkbox
                       checked={formData.services?.includes('skirt')}
-                      onChange={handleServiceChange('skirt')}
+                      onChange={(e) => handleServiceChange('skirt', e)}
                     />
                   }
                   label={serviceTranslations['skirt']}

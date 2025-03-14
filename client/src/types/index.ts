@@ -7,7 +7,7 @@ export interface Profile {
   breastSize: number;
   phone: string;
   description: string;
-  photos: string[];
+  photos: string; // JSON string
   price1Hour: number;
   price2Hours: number;
   priceNight: number;
@@ -16,7 +16,7 @@ export interface Profile {
   isVerified: boolean;
   hasVideo: boolean;
   hasReviews: boolean;
-  services: string[];
+  services: string; // JSON string
   cityId: number;
   district?: string;
   isActive: boolean;
