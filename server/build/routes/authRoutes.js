@@ -39,7 +39,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const authController = __importStar(require("../controllers/authController"));
 const router = express_1.default.Router();
+// Маршрут для авторизации, который должен обрабатывать /auth/login
 router.post('/login', async (req, res) => {
+    console.log('Auth route called with body:', req.body);
     await authController.login(req, res);
 });
 exports.default = router;

@@ -1,0 +1,18 @@
+// Замените строки в app.use 
+app.use('/profiles', profileRoutes);
+app.use('/cities', cityRoutes);
+app.use('/settings', settingsRoutes);
+app.use('/auth', authRoutes);
+
+// и администраторские маршруты
+app.use('/admin', authMiddleware);
+app.use('/admin/cities', adminCityRoutes);
+
+// Добавьте эти маршруты
+app.get('/health', (_req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString(), environment: process.env.NODE_ENV });
+});
+
+app.get('/test', (_req, res) => {
+  res.status(200).json({ message: 'API работает!' });
+});
