@@ -33,8 +33,10 @@ import { serviceTranslations } from '../../utils/serviceTranslations';
 
 interface ProfileEditorProps {
   profile?: Profile;
+  profileId?: number;
   onSave: (profile: Profile) => void;
   onClose?: () => void;
+  onCancel?: () => void;
 }
 
 interface NumericRange {
@@ -44,7 +46,7 @@ interface NumericRange {
 
 const MAX_PHOTOS = 3;
 
-const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onClose }) => {
+const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSave, onClose, onCancel }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
@@ -119,8 +121,28 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onClose 
       }
     };
 
+    const fetchProfile = async () => {
+      if (profileId) {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await api.get(`/profiles/${profileId}`);
+          if (response.data) {
+            setFormData(response.data);
+            setPhotos(response.data.photos || []);
+          }
+        } catch (err) {
+          console.error('Error fetching profile:', err);
+          setError('Ошибка при загрузке данных анкеты');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchCities();
-  }, []);
+    fetchProfile();
+  }, [profileId]);
 
   useEffect(() => {
     console.log('Cities state updated:', cities);
@@ -257,7 +279,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onClose 
   return (
     <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
       <Typography variant="h5" gutterBottom>
-        {profile ? 'Редактирование анкеты' : 'Создание анкеты'}
+        {profile || profileId ? 'Редактирование анкеты' : 'Создание анкеты'}
       </Typography>
       
       {error && (
@@ -1225,14 +1247,21 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, onSave, onClose 
           </Grid>
           
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            {onClose && <Button onClick={onClose} sx={{ mr: 1 }}>Отмена</Button>}
+            {(onClose || onCancel) && (
+              <Button 
+                onClick={onCancel || onClose} 
+                sx={{ mr: 1 }}
+              >
+                Отмена
+              </Button>
+            )}
             <Button
               onClick={handleSubmit}
               variant="contained"
               color="primary"
               disabled={loading}
             >
-              {profile ? 'Сохранить' : 'Создать'}
+              {profile || profileId ? 'Сохранить' : 'Создать'}
             </Button>
           </Box>
         </Box>

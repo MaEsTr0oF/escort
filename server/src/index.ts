@@ -12,6 +12,7 @@ import authRoutes from './routes/authRoutes';
 import profileRoutes from './routes/profileRoutes';
 import cityRoutes from './routes/cityRoutes';
 import settingsRoutes from './routes/settingsRoutes';
+import * as dashboardController from './controllers/dashboardController';
 
 dotenv.config();
 
@@ -72,6 +73,16 @@ app.use('/api/auth', authRoutes);
 // Маршруты администратора
 app.use('/api/admin', authMiddleware);
 
+// Добавляем маршрут для получения статистики дашборда
+app.get('/api/admin/dashboard/stats', authMiddleware, async (req, res) => {
+  await dashboardController.getStats(req, res);
+});
+
+// Добавляем маршрут для получения профилей для админки
+app.get('/api/admin/profiles', authMiddleware, async (req, res) => {
+  await profileController.getAdminProfiles(req, res);
+});
+
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../public')));
 
@@ -91,4 +102,4 @@ checkDatabaseConnection().then(() => {
 }).catch((error) => {
   console.error('❌ Ошибка запуска сервера:', error);
   process.exit(1);
-}); 
+});

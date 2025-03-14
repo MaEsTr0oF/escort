@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "windows"]
@@ -33,40 +27,32 @@ model Profile {
   price1Hour    Int
   price2Hours   Int
   priceNight    Int
-  priceExpress  Int      @default(0)
   workingHours  String?
   isVerified    Boolean  @default(false)
-  hasVideo      Boolean  @default(false)
-  hasReviews    Boolean  @default(false)
   services      String[]
-  city          City     @relation(fields: [cityId], references: [id])
   cityId        Int
   district      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   isActive      Boolean  @default(true)
-  
-  // Appearance
-  nationality   String?
-  hairColor     String?
   bikiniZone    String?
   gender        String   @default("female")
-  orientation   String   @default("hetero")
-  
-  // Location
+  hairColor     String?
+  hasReviews    Boolean  @default(false)
+  hasVideo      Boolean  @default(false)
   inCall        Boolean  @default(true)
-  outCall       Boolean  @default(false)
-  
-  // Additional filters
-  isNonSmoking  Boolean  @default(false)
-  isNew         Boolean  @default(true)
-  isWaitingCall Boolean  @default(false)
   is24Hours     Boolean  @default(false)
-  
-  // Neighbors
   isAlone       Boolean  @default(true)
+  isNew         Boolean  @default(true)
+  isNonSmoking  Boolean  @default(false)
+  isWaitingCall Boolean  @default(false)
+  nationality   String?
+  orientation   String   @default("hetero")
+  outCall       Boolean  @default(false)
+  priceExpress  Int      @default(0)
   withFriend    Boolean  @default(false)
   withFriends   Boolean  @default(false)
+  city          City     @relation(fields: [cityId], references: [id])
 }
 
 model Admin {
@@ -77,20 +63,20 @@ model Admin {
 }
 
 model Settings {
-  id                  Int      @id @default(autoincrement())
-  telegramUsername    String   @default("your_admin_username")
+  id                   Int      @id @default(autoincrement())
+  telegramUsername     String   @default("your_admin_username")
   notificationsEnabled Boolean  @default(true)
-  autoModeration      Boolean  @default(false)
-  defaultCity         String?
-  maintenanceMode     Boolean  @default(false)
-  watermarkEnabled    Boolean  @default(true)
-  watermarkText       String   @default("@your_watermark")
-  minPhotoCount       Int      @default(3)
-  maxPhotoCount       Int      @default(10)
-  defaultPriceHour    Int      @default(5000)
-  defaultPriceTwoHours Int     @default(10000)
-  defaultPriceNight   Int      @default(30000)
-  updatedAt          DateTime @updatedAt
+  autoModeration       Boolean  @default(false)
+  defaultCity          String?
+  maintenanceMode      Boolean  @default(false)
+  watermarkEnabled     Boolean  @default(true)
+  watermarkText        String   @default("@your_watermark")
+  minPhotoCount        Int      @default(3)
+  maxPhotoCount        Int      @default(10)
+  defaultPriceHour     Int      @default(5000)
+  defaultPriceTwoHours Int      @default(10000)
+  defaultPriceNight    Int      @default(30000)
+  updatedAt            DateTime @updatedAt
 }
 
 model Language {

@@ -1,59 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
   Box,
+  Container,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Button,
+  IconButton,
+  Chip,
+  Alert,
+  CircularProgress,
+  Tooltip,
   Grid,
   Card,
   CardContent,
   CardActions,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Typography,
 } from '@mui/material';
 import {
-  Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Check as CheckIcon,
   Block as BlockIcon,
   ArrowBack as ArrowBackIcon,
+  VerifiedUser as VerifyIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config';
-import { Profile, City } from '../../types';
 import ProfileEditor from '../../components/admin/ProfileEditor';
-import { handleAxiosError } from '../../utils/errorHandling';
-import { useNavigate } from 'react-router-dom';
+import { Profile, City } from '../../types';
+
+// Временный интерфейс для отображения в таблице
+interface ProfileListItem {
+  id: number;
+  name: string;
+  age: number;
+  cityId: number;
+  city?: {
+    id: number;
+    name: string;
+  };
+  phone: string;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: string;
+}
 
 const ProfilesPage: React.FC = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const navigate = useNavigate();
+  const [profiles, setProfiles] = useState<ProfileListItem[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const token = localStorage.getItem('adminToken');
   const [showEditor, setShowEditor] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!token) {
+      navigate('/admin/login');
+      return;
+    }
+
     fetchProfiles();
     fetchCities();
-  }, []);
+  }, [token, navigate]);
 
   const fetchProfiles = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      setLoading(true);
       const response = await axios.get(`${API_URL}/admin/profiles`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      setProfiles(response.data);
-    } catch (error) {
-      const { message, status } = handleAxiosError(error);
-      console.error('Error fetching profiles:', message);
-      if (status === 401) {
-        navigate('/login');
+
+      // Проверка, является ли response.data массивом
+      if (Array.isArray(response.data)) {
+        setProfiles(response.data);
+      } else {
+        console.error('Expected array but got:', typeof response.data, response.data);
+        setProfiles([]);
+        setError('Данные профилей в неверном формате');
       }
+    } catch (error) {
+      console.error('Error fetching profiles:', error);
+      setError('Ошибка при загрузке анкет');
     } finally {
       setLoading(false);
     }
@@ -68,9 +106,31 @@ const ProfilesPage: React.FC = () => {
     }
   };
 
-  const handleOpenEditor = (profile?: Profile) => {
+  // Функция для получения полных данных профиля
+  const fetchFullProfile = async (id: number): Promise<Profile | null> => {
+    try {
+      const response = await axios.get(`${API_URL}/admin/profiles/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching full profile:', error);
+      return null;
+    }
+  };
+
+  const handleOpenEditor = async (profile?: ProfileListItem) => {
     if (profile) {
-      setSelectedProfile(profile);
+      // Получаем полные данные для редактирования
+      const fullProfile = await fetchFullProfile(profile.id);
+      if (fullProfile) {
+        setSelectedProfile(fullProfile);
+      } else {
+        setError('Не удалось загрузить данные анкеты для редактирования');
+        return;
+      }
     } else {
       setSelectedProfile(null);
     }
@@ -84,8 +144,6 @@ const ProfilesPage: React.FC = () => {
 
   const handleSaveProfile = async (profileData: Profile) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      console.log('Sending profile data:', profileData);
       if (selectedProfile) {
         const response = await axios.put(
           `${API_URL}/admin/profiles/${selectedProfile.id}`,
@@ -103,10 +161,22 @@ const ProfilesPage: React.FC = () => {
       }
       fetchProfiles();
       handleCloseEditor();
+    } catch (error: any) {
+      console.error('Error saving profile:', error);
+      setError(error.response?.data?.message || 'Ошибка при сохранении профиля');
+    }
+  };
+
+  const handleToggleStatus = async (profile: ProfileListItem) => {
+    try {
+      await axios.patch(`${API_URL}/admin/profiles/${profile.id}/toggle-active`, 
+        { isActive: !profile.isActive },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchProfiles();
     } catch (error) {
-      const { message } = handleAxiosError(error);
-      console.error('Error saving profile:', message);
-      setError(message);
+      console.error('Error toggling status:', error);
+      setError('Ошибка при изменении статуса анкеты');
     }
   };
 
@@ -116,30 +186,45 @@ const ProfilesPage: React.FC = () => {
     }
 
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.delete(`${API_URL}/admin/profiles/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.delete(`${API_URL}/profiles/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      fetchProfiles();
+      setProfiles(profiles.filter(profile => profile.id !== id));
     } catch (error) {
-      const { message } = handleAxiosError(error);
-      console.error('Error deleting profile:', message);
+      console.error('Error deleting profile:', error);
+      setError('Ошибка при удалении анкеты');
     }
   };
 
-  const handleToggleStatus = async (profile: Profile) => {
+  const handleVerify = async (id: number) => {
     try {
-      const token = localStorage.getItem('adminToken');
-      await axios.put(
-        `${API_URL}/admin/profiles/${profile.id}`,
-        { isActive: !profile.isActive },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchProfiles();
+      const response = await axios.post(`${API_URL}/profiles/${id}/verify`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // Обновляем список анкет после верификации
+      setProfiles(profiles.map(profile => 
+        profile.id === id 
+          ? { ...profile, isVerified: true } 
+          : profile
+      ));
+      
     } catch (error) {
-      console.error('Error toggling profile status:', error);
-      setError('Ошибка при изменении статуса анкеты');
+      console.error('Error verifying profile:', error);
+      setError('Ошибка при верификации анкеты');
     }
+  };
+
+  const handleEdit = (id: number) => {
+    navigate(`/admin/profiles/${id}/edit`);
+  };
+
+  const handleAddNew = () => {
+    navigate('/admin/profiles/new');
   };
 
   if (loading) {
@@ -153,7 +238,6 @@ const ProfilesPage: React.FC = () => {
   return (
     <Container maxWidth="lg">
       {!showEditor ? (
-        // Список профилей
         <>
           <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h5">Управление анкетами</Typography>
@@ -211,7 +295,6 @@ const ProfilesPage: React.FC = () => {
           </Grid>
         </>
       ) : (
-        // Редактор профиля
         <>
           <Box sx={{ mb: 3 }}>
             <Button
@@ -233,4 +316,4 @@ const ProfilesPage: React.FC = () => {
   );
 };
 
-export default ProfilesPage; 
+export default ProfilesPage;

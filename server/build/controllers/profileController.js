@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServices = exports.verifyProfile = exports.deleteProfile = exports.updateProfile = exports.createProfile = exports.getProfileById = exports.getProfiles = exports.getProfile = void 0;
+exports.getAdminProfiles = exports.getServices = exports.verifyProfile = exports.deleteProfile = exports.updateProfile = exports.createProfile = exports.getProfileById = exports.getProfiles = exports.getProfile = void 0;
 const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 const getProfile = async (req, res) => {
@@ -28,9 +28,8 @@ const getProfiles = async (req, res) => {
         const isAdminRequest = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.startsWith('Bearer ');
         console.log('Request query:', req.query);
         console.log('Is admin request:', isAdminRequest);
-        const filters = {
-            isActive: isAdminRequest ? undefined : true,
-        };
+        // ВАЖНОЕ ИЗМЕНЕНИЕ: По умолчанию не фильтруем по isActive
+        const filters = {};
         // Базовые фильтры
         if (cityId)
             filters.cityId = Number(cityId);
@@ -339,3 +338,25 @@ const getServices = async (_req, res) => {
     }
 };
 exports.getServices = getServices;
+const getAdminProfiles = async (req, res) => {
+    try {
+        const { limit } = req.query;
+        const limitNumber = limit ? parseInt(limit) : undefined;
+        const profiles = await prisma.profile.findMany({
+            take: limitNumber,
+            include: {
+                city: true,
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+        console.log(`Found ${profiles.length} profiles for admin dashboard`);
+        return res.json(profiles);
+    }
+    catch (error) {
+        console.error('Error fetching admin profiles:', error);
+        return res.status(500).json({ error: 'Failed to fetch profiles' });
+    }
+};
+exports.getAdminProfiles = getAdminProfiles;

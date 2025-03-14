@@ -41,10 +41,24 @@ const profileController = __importStar(require("../controllers/profileController
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
-router.get('/', (req, res) => profileController.getProfiles(req, res));
-router.get('/:id', (req, res) => profileController.getProfileById(req, res));
+router.get('/', async (req, res) => {
+    await profileController.getProfiles(req, res);
+});
+router.get('/:id', async (req, res) => {
+    await profileController.getProfileById(req, res);
+});
 // Admin routes
-router.post('/', auth_1.authMiddleware, (req, res) => profileController.createProfile(req, res));
-router.put('/:id', auth_1.authMiddleware, (req, res) => profileController.updateProfile(req, res));
-router.delete('/:id', auth_1.authMiddleware, (req, res) => profileController.deleteProfile(req, res));
+router.post('/', auth_1.authMiddleware, async (req, res) => {
+    await profileController.createProfile(req, res);
+});
+router.put('/:id', auth_1.authMiddleware, async (req, res) => {
+    await profileController.updateProfile(req, res);
+});
+router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
+    await profileController.deleteProfile(req, res);
+});
+// Добавляем маршрут для верификации анкеты
+router.post('/:id/verify', auth_1.authMiddleware, async (req, res) => {
+    await profileController.verifyProfile(req, res);
+});
 exports.default = router;

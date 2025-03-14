@@ -41,10 +41,20 @@ const cityController = __importStar(require("../controllers/cityController"));
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
 // Public routes
-router.get('/', (req, res) => cityController.getCities(req, res));
-router.get('/districts/:cityId', (req, res) => cityController.getDistrictsByCityId(req, res));
+router.get('/', async (req, res) => {
+    await cityController.getCities(req, res);
+});
+router.get('/districts/:cityId', async (req, res) => {
+    await cityController.getDistrictsByCityId(req, res);
+});
 // Admin routes
-router.post('/', auth_1.authMiddleware, (req, res) => cityController.createCity(req, res));
-router.put('/:id', auth_1.authMiddleware, (req, res) => cityController.updateCity(req, res));
-router.delete('/:id', auth_1.authMiddleware, (req, res) => cityController.deleteCity(req, res));
+router.post('/', auth_1.authMiddleware, async (req, res) => {
+    await cityController.createCity(req, res);
+});
+router.put('/:id', auth_1.authMiddleware, async (req, res) => {
+    await cityController.updateCity(req, res);
+});
+router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
+    await cityController.deleteCity(req, res);
+});
 exports.default = router;

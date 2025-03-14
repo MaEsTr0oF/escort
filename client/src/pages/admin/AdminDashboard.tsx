@@ -1,181 +1,245 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Paper,
-  Typography,
   Box,
-  Button,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
+  Paper,
+  Avatar,
   Chip,
-  Alert,
-  CircularProgress,
+  styled,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
+  PeopleOutline as PeopleIcon,
+  LocationCityOutlined as CityIcon,
+  VerifiedOutlined as VerifiedIcon,
+  SupervisorAccountOutlined as AdminIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../../config';
-import { Profile } from '../../types';
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  borderRadius: theme.shape.borderRadius * 2,
+}));
+
+const StatCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  borderRadius: theme.shape.borderRadius * 2,
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[2],
+}));
+
+const StatIcon = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 60,
+  height: 60,
+  borderRadius: '50%',
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  marginBottom: theme.spacing(2),
+}));
+
+// Функция для форматирования даты
+const formatDateTime = (dateString: string | Date): string => {
+  if (!dateString) return 'Неизвестно';
+  
+  const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+  
+  return date.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
 
 const AdminDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [stats, setStats] = useState({
+    profiles: 0,
+    cities: 0,
+    verified: 0,
+    admins: 0,
+  });
+  const [latestProfiles, setLatestProfiles] = useState<any[]>([]);
   const token = localStorage.getItem('adminToken');
 
   useEffect(() => {
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-
-    const fetchProfiles = async () => {
+    const fetchStats = async () => {
       try {
-        setLoading(true);
-        const response = await axios.get(`${API_URL}/admin/profiles`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const response = await axios.get(`${API_URL}/admin/dashboard/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setProfiles(response.data);
+        setStats(response.data);
       } catch (error) {
-        console.error('Error fetching profiles:', error);
-        setError('Ошибка при загрузке анкет');
-      } finally {
-        setLoading(false);
+        console.error('Error fetching stats:', error);
       }
     };
 
-    fetchProfiles();
-  }, [token, navigate]);
+    const fetchLatestProfiles = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/admin/profiles`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { limit: 5 },
+        });
+        
+        if (Array.isArray(response.data)) {
+          setLatestProfiles(response.data);
+        } else {
+          console.error('Expected array but got:', typeof response.data);
+          setLatestProfiles([]);
+        }
+      } catch (error) {
+        console.error('Error fetching latest profiles:', error);
+        setLatestProfiles([]);
+      }
+    };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту анкету?')) {
-      return;
+    if (token) {
+      fetchStats();
+      fetchLatestProfiles();
     }
-
-    try {
-      await axios.delete(`${API_URL}/admin/profiles/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setProfiles(profiles.filter(profile => profile.id !== id));
-    } catch (error) {
-      console.error('Error deleting profile:', error);
-      setError('Ошибка при удалении анкеты');
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    navigate('/admin/login');
-  };
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  }, [token]);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          Управление анкетами
-        </Typography>
-        <Box>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/admin/profiles/new')}
-            sx={{ mr: 2 }}
-          >
-            Добавить анкету
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleLogout}
-          >
-            Выйти
-          </Button>
-        </Box>
-      </Box>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        Панель администратора
+      </Typography>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <StatIcon>
+                <PeopleIcon fontSize="large" />
+              </StatIcon>
+              <Typography variant="h4" align="center">
+                {stats.profiles}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" align="center">
+                Анкеты
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <StatIcon>
+                <CityIcon fontSize="large" />
+              </StatIcon>
+              <Typography variant="h4" align="center">
+                {stats.cities}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" align="center">
+                Города
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <StatIcon>
+                <VerifiedIcon fontSize="large" />
+              </StatIcon>
+              <Typography variant="h4" align="center">
+                {stats.verified}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" align="center">
+                Проверенные
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StatCard>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <StatIcon>
+                <AdminIcon fontSize="large" />
+              </StatIcon>
+              <Typography variant="h4" align="center">
+                {stats.admins}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" align="center">
+                Администраторы
+              </Typography>
+            </CardContent>
+          </StatCard>
+        </Grid>
+      </Grid>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Имя</TableCell>
-              <TableCell>Город</TableCell>
-              <TableCell>Телефон</TableCell>
-              <TableCell>Статус</TableCell>
-              <TableCell>Действия</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {profiles.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  Нет анкет для отображения
-                </TableCell>
-              </TableRow>
-            ) : (
-              profiles.map((profile) => (
-                <TableRow key={profile.id}>
-                  <TableCell>{profile.id}</TableCell>
-                  <TableCell>{profile.name}</TableCell>
-                  <TableCell>{profile.cityId}</TableCell>
-                  <TableCell>{profile.phone}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={profile.isActive ? 'Активна' : 'Неактивна'}
-                      color={profile.isActive ? 'success' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      onClick={() => navigate(`/admin/profiles/${profile.id}/edit`)}
-                      size="small"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(profile.id)}
-                      size="small"
-                      color="error"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
+      <StyledCard>
+        <CardContent>
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Последние анкеты
+          </Typography>
+          <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Фото</TableCell>
+                  <TableCell>Имя</TableCell>
+                  <TableCell>Город</TableCell>
+                  <TableCell>Статус</TableCell>
+                  <TableCell>Добавлена</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Container>
+              </TableHead>
+              <TableBody>
+                {latestProfiles.length > 0 ? (
+                  latestProfiles.map((profile) => (
+                    <TableRow key={profile.id}>
+                      <TableCell>
+                        <Avatar
+                          alt={profile.name}
+                          src={profile.photos && profile.photos.length > 0 ? profile.photos[0] : ''}
+                          sx={{ width: 40, height: 40 }}
+                        />
+                      </TableCell>
+                      <TableCell>{profile.name}</TableCell>
+                      <TableCell>{profile.city?.name || 'Неизвестно'}</TableCell>
+                      <TableCell>
+                        {profile.isVerified ? (
+                          <Chip
+                            label="Проверена"
+                            color="success"
+                            size="small"
+                            icon={<VerifiedIcon />}
+                          />
+                        ) : (
+                          <Chip label="Не проверена" size="small" />
+                        )}
+                      </TableCell>
+                      <TableCell>{formatDateTime(profile.createdAt)}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      Нет данных
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </StyledCard>
+    </Box>
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
