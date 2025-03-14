@@ -61,7 +61,11 @@ const getProfileById = async (req, res) => {
 };
 exports.getProfileById = getProfileById;
 const createProfile = async (req, res) => {
+    var _a, _b, _c, _d;
     try {
+        // Преобразуем массивы в JSON строки
+        const photos = Array.isArray(req.body.photos) ? JSON.stringify(req.body.photos) : req.body.photos;
+        const services = Array.isArray(req.body.services) ? JSON.stringify(req.body.services) : req.body.services || '[]';
         const profileData = {
             name: req.body.name,
             age: Number(req.body.age),
@@ -70,26 +74,53 @@ const createProfile = async (req, res) => {
             breastSize: Number(req.body.breastSize),
             phone: req.body.phone,
             description: req.body.description,
-            photos: Array.isArray(req.body.photos) ? JSON.stringify(req.body.photos) : req.body.photos,
+            photos,
             price1Hour: Number(req.body.price1Hour),
             price2Hours: Number(req.body.price2Hours),
             priceNight: Number(req.body.priceNight),
             priceExpress: Number(req.body.priceExpress || 0),
             cityId: Number(req.body.cityId),
             district: req.body.district,
-            services: req.body.services || []
+            services,
+            // Дополнительные поля
+            nationality: req.body.nationality,
+            hairColor: req.body.hairColor,
+            bikiniZone: req.body.bikiniZone,
+            gender: req.body.gender || 'female',
+            orientation: req.body.orientation || 'hetero',
+            // Булевы поля с дефолтными значениями
+            isVerified: req.body.isVerified || false,
+            hasVideo: req.body.hasVideo || false,
+            hasReviews: req.body.hasReviews || false,
+            // Дополнительные булевы поля
+            inCall: (_a = req.body.inCall) !== null && _a !== void 0 ? _a : true,
+            outCall: (_b = req.body.outCall) !== null && _b !== void 0 ? _b : false,
+            // Другие флаги
+            isNonSmoking: req.body.isNonSmoking || false,
+            isNew: (_c = req.body.isNew) !== null && _c !== void 0 ? _c : true,
+            isWaitingCall: req.body.isWaitingCall || false,
+            is24Hours: req.body.is24Hours || false,
+            // Поля для группы
+            isAlone: (_d = req.body.isAlone) !== null && _d !== void 0 ? _d : true,
+            withFriend: req.body.withFriend || false,
+            withFriends: req.body.withFriends || false,
         };
+        console.log('Creating profile with data:', profileData);
         const profile = await prisma.profile.create({
             data: profileData,
             include: {
                 city: true,
             },
         });
+        console.log('Created profile:', profile);
         res.status(201).json(profile);
     }
     catch (error) {
         console.error('Error creating profile:', error);
-        res.status(500).json({ error: 'Failed to create profile' });
+        res.status(500).json({
+            error: 'Failed to create profile',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 };
 exports.createProfile = createProfile;
