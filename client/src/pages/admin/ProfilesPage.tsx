@@ -357,7 +357,7 @@ const ProfilesPage: React.FC = () => {
       {!showEditor ? (
         <>
           <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h5">Управление анкетами</Typography>
+            <Typography variant="h5">правление анкетами</Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
