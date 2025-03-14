@@ -19,7 +19,26 @@ api.interceptors.request.use((config) => {
 
 // Add a response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Для маршрутов, которые должны возвращать массивы
+    const arrayEndpoints = ['/cities', '/admin/cities', '/profiles', '/admin/profiles'];
+    
+    // Проверяем, соответствует ли текущий запрос одному из маршрутов, возвращающих массивы
+    if (response.config.method === 'get' && arrayEndpoints.some(endpoint => 
+        response.config.url?.endsWith(endpoint))) {
+      
+      // Если ответ не массив, логируем ошибку и возвращаем пустой массив
+      if (!Array.isArray(response.data)) {
+        console.error('API вернул неожидаемый формат. Ожидался массив:', 
+                      response.config.url, response.data);
+        
+        // Изменяем response.data на пустой массив
+        response.data = [];
+      }
+    }
+    
+    return response;
+  },
   (error) => {
     console.error('API Error:', error.response || error);
     if (error.response?.status === 401) {
@@ -28,4 +47,4 @@ api.interceptors.response.use(
     }
     return Promise.reject(error);
   }
-); 
+);

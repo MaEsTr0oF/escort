@@ -47,11 +47,43 @@ const CitiesPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const response = await api.get('/admin/cities');
-      setCities(response.data);
+      
+      // Попробуем сначала с /admin/cities
+      try {
+        const response = await api.get('/admin/cities');
+        
+        // Проверка на массив
+        if (Array.isArray(response.data)) {
+          setCities(response.data);
+          return;
+        } else {
+          console.warn('Ответ от /admin/cities не является массивом:', response.data);
+        }
+      } catch (adminError) {
+        console.warn('Ошибка при использовании /admin/cities:', adminError);
+      }
+
+      // Если первый запрос не удался, пробуем простой /cities
+      try {
+        const fallbackResponse = await api.get('/cities');
+        
+        if (Array.isArray(fallbackResponse.data)) {
+          setCities(fallbackResponse.data);
+        } else {
+          console.error('Ответ от /cities не является массивом:', fallbackResponse.data);
+          setCities([]);
+          setError('Ошибка формата данных с сервера');
+        }
+      } catch (fallbackError) {
+        console.error('Ошибка при использовании /cities:', fallbackError);
+        setCities([]);
+        setError('Ошибка при загрузке списка городов');
+      }
+      
     } catch (error) {
       console.error('Error fetching cities:', error);
       setError('Ошибка при загрузке списка городов');
+      setCities([]);
     } finally {
       setLoading(false);
     }
@@ -154,7 +186,7 @@ const CitiesPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {cities.map((city) => (
+            {Array.isArray(cities) && cities.length > 0 ? cities.map((city) => (
               <TableRow key={city.id}>
                 <TableCell>{city.id}</TableCell>
                 <TableCell>{city.name}</TableCell>
@@ -176,11 +208,10 @@ const CitiesPage: React.FC = () => {
                   </IconButton>
                 </TableCell>
               </TableRow>
-            ))}
-            {cities.length === 0 && !loading && (
+            )) : (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  Нет доступных городов
+                  {loading ? 'Загрузка...' : 'Нет доступных городов'}
                 </TableCell>
               </TableRow>
             )}
@@ -219,4 +250,4 @@ const CitiesPage: React.FC = () => {
   );
 };
 
-export default CitiesPage; 
+export default CitiesPage;
