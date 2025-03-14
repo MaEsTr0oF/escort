@@ -1,0 +1,16 @@
+✅ Успешное подключение к базе данных
+✅ Сервер запущен на порту 3001
+📝 Админ-панель доступна по адресу: http://localhost:3001/admin
+🔑 API доступно по адресу: http://localhost:3001/api
+[DEBUG] Получен запрос: GET /cities
+Fetching cities...
+Found cities: [
+  { id: 1, name: 'Москва', _count: { profiles: 3 } },
+  { id: 2, name: 'Тверь', _count: { profiles: 0 } }
+]
+[DEBUG] Получен запрос: GET /cities
+Fetching cities...
+Found cities: [
+  { id: 1, name: 'Москва', _count: { profiles: 3 } },
+  { id: 2, name: 'Тверь', _count: { profiles: 0 } }
+]

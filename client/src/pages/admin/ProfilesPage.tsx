@@ -199,22 +199,15 @@ const ProfilesPage: React.FC = () => {
 
   const handleVerify = async (id: number) => {
     try {
-      const response = await api.post(`/profiles/${id}/verify`, {}, {
+      await api.patch(`/admin/profiles/${id}/verify`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      // Обновляем список анкет после верификации
-      setProfiles(profiles.map(profile => 
-        profile.id === id 
-          ? { ...profile, isVerified: true } 
-          : profile
-      ));
-      
+      fetchProfiles();
     } catch (error) {
-      console.error('Error verifying profile:', error);
-      setError('Ошибка при верификации анкеты');
+      console.error("Ошибка при изменении статуса верификации:", error);
+      setError("Ошибка при изменении статуса верификации");
     }
   };
 

@@ -40,14 +40,23 @@ const express_1 = __importDefault(require("express"));
 const profileController = __importStar(require("../controllers/profileController"));
 const auth_1 = require("../middleware/auth");
 const router = express_1.default.Router();
-// Public routes
+// Публичные маршруты
 router.get('/', async (req, res) => {
     await profileController.getProfiles(req, res);
 });
 router.get('/:id', async (req, res) => {
+    if (req.body && req.body.photos && Array.isArray(req.body.photos)) {
+        req.body.photos = JSON.stringify(req.body.photos);
+        console.log('Photos converted to JSON string:', req.body.photos);
+    }
+    // Также преобразуем services в JSON строку, если они приходят как массив
+    if (req.body && req.body.services && Array.isArray(req.body.services)) {
+        req.body.services = JSON.stringify(req.body.services);
+        console.log('Services converted to JSON string:', req.body.services);
+    }
     await profileController.getProfileById(req, res);
 });
-// Admin routes
+// Маршруты администратора (требуют аутентификации)
 router.post('/', auth_1.authMiddleware, async (req, res) => {
     await profileController.createProfile(req, res);
 });
@@ -57,8 +66,10 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
 router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
     await profileController.deleteProfile(req, res);
 });
-// Добавляем маршрут для верификации анкеты
-router.post('/:id/verify', auth_1.authMiddleware, async (req, res) => {
+router.patch('/:id/toggle-active', auth_1.authMiddleware, async (req, res) => {
+    await profileController.toggleProfileActive(req, res);
+});
+router.patch('/:id/verify', auth_1.authMiddleware, async (req, res) => {
     await profileController.verifyProfile(req, res);
 });
 exports.default = router;
