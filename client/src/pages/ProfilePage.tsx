@@ -120,7 +120,7 @@ const ProfilePage: React.FC = () => {
               Фотографии
             </Typography>
             <ImageList cols={2} gap={16}>
-              {profile.photos.map((photo, index) => (
+              {JSON.parse(profile.photos || '[]').map((photo: string, index: number) => (
                 <ImageListItem key={index}>
                   <ProfileImage
                     src={photo}
@@ -202,7 +202,7 @@ const ProfilePage: React.FC = () => {
               Услуги
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {profile.services.map((service, index) => (
+              {JSON.parse(profile.services || '[]').map((service: string, index: number) => (
                 <Chip key={index} label={serviceTranslations[service] || service} />
               ))}
             </Box>

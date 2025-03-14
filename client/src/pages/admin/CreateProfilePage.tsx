@@ -366,15 +366,25 @@ const CreateProfilePage: React.FC = () => {
                 style={{ marginBottom: '10px', display: 'block' }}
               />
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {formData.photos.length > 0 && formData.photos.map((photo, index) => (
-                  <Box
-                    key={index}
-                    component="img"
-                    src={photo}
-                    alt={`Фото ${index + 1}`}
-                    sx={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 1 }}
-                  />
-                ))}
+                {Array.isArray(formData.photos) 
+                  ? formData.photos.map((photo, index) => (
+                      <Box
+                        key={index}
+                        component="img"
+                        src={photo}
+                        alt={`Фото ${index + 1}`}
+                        sx={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 1 }}
+                      />
+                    ))
+                  : (formData.photos && typeof formData.photos === 'string' && JSON.parse(formData.photos || '[]').map((photo: string, index: number) => (
+                      <Box
+                        key={index}
+                        component="img"
+                        src={photo}
+                        alt={`Фото ${index + 1}`}
+                        sx={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 1 }}
+                      />
+                    )))}
               </Box>
             </Grid>
             
