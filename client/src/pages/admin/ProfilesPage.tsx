@@ -20,6 +20,10 @@ import {
   Card,
   CardContent,
   CardActions,
+  Divider,
+  Avatar,
+  Snackbar,
+  SnackbarContent,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -60,6 +64,12 @@ const ProfilesPage: React.FC = () => {
   const token = localStorage.getItem('adminToken');
   const [showEditor, setShowEditor] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
+  const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'info' | 'warning',
+  });
 
   useEffect(() => {
     if (!token) {
@@ -168,14 +178,34 @@ const ProfilesPage: React.FC = () => {
 
   const handleToggleStatus = async (profile: ProfileListItem) => {
     try {
+      setProcessingIds(prev => ({ ...prev, [profile.id]: true }));
+      setError('');
+      
       await api.patch(`/admin/profiles/${profile.id}/toggle-active`, 
         { isActive: !profile.isActive },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      // Показываем уведомление об успехе
+      setSnackbar({
+        open: true,
+        message: `Анкета ${!profile.isActive ? 'активирована' : 'деактивирована'}`,
+        severity: 'success',
+      });
+      
       fetchProfiles();
     } catch (error) {
       console.error('Error toggling status:', error);
       setError('Ошибка при изменении статуса анкеты');
+      
+      // Показываем уведомление об ошибке
+      setSnackbar({
+        open: true,
+        message: "Ошибка при изменении статуса анкеты",
+        severity: 'error',
+      });
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [profile.id]: false }));
     }
   };
 
@@ -199,16 +229,44 @@ const ProfilesPage: React.FC = () => {
 
   const handleVerify = async (id: number) => {
     try {
-      await api.patch(`/admin/profiles/${id}/verify`, {}, {
+      setProcessingIds(prev => ({ ...prev, [id]: true }));
+      setError('');
+      
+      const response = await api.patch(`/admin/profiles/${id}/verify`, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      
+      // Находим профиль в текущем списке
+      const profile = profiles.find(p => p.id === id);
+      const newVerifiedStatus = !profile?.isVerified;
+      
+      // Показываем уведомление об успехе
+      setSnackbar({
+        open: true,
+        message: `Анкета ${newVerifiedStatus ? 'проверена' : 'отмечена как непроверенная'}`,
+        severity: 'success',
+      });
+      
       fetchProfiles();
     } catch (error) {
       console.error("Ошибка при изменении статуса верификации:", error);
       setError("Ошибка при изменении статуса верификации");
+      
+      // Показываем уведомление об ошибке
+      setSnackbar({
+        open: true,
+        message: "Ошибка при изменении статуса верификации",
+        severity: 'error',
+      });
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [id]: false }));
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   const handleEdit = (id: number) => {
@@ -251,35 +309,100 @@ const ProfilesPage: React.FC = () => {
           <Grid container spacing={3}>
             {profiles.map((profile) => (
               <Grid item xs={12} sm={6} md={4} key={profile.id}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {profile.name}, {profile.age} лет
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Город: {cities.find(c => c.id === profile.cityId)?.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Телефон: {profile.phone}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Статус: {profile.isActive ? 'Активна' : 'Неактивна'}
-                    </Typography>
+                <Card 
+                  sx={{ 
+                    height: '100%', 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                      boxShadow: 6,
+                    },
+                    ...(profile.isVerified && {
+                      border: '1px solid',
+                      borderColor: 'success.main'
+                    }),
+                    ...(profile.isActive ? {} : {
+                      opacity: 0.7
+                    })
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="h6">
+                        {profile.name}, {profile.age} лет
+                      </Typography>
+                      <Chip
+                        size="small"
+                        icon={<VerifyIcon />}
+                        label={profile.isVerified ? "Проверено" : "Не проверено"}
+                        color={profile.isVerified ? "success" : "warning"}
+                      />
+                    </Box>
+                    <Divider sx={{ my: 1 }} />
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', mr: 1 }}>
+                        Город:
+                      </Typography>
+                      <Typography variant="body2">
+                        {cities.find(c => c.id === profile.cityId)?.name || 'Не указан'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', mr: 1 }}>
+                        Телефон:
+                      </Typography>
+                      <Typography variant="body2">
+                        {profile.phone || 'Не указан'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', mr: 1 }}>
+                        Статус:
+                      </Typography>
+                      <Chip 
+                        size="small" 
+                        label={profile.isActive ? 'Активна' : 'Неактивна'} 
+                        color={profile.isActive ? 'success' : 'default'}
+                      />
+                    </Box>
                   </CardContent>
+                  <Divider />
                   <CardActions>
-                    <IconButton onClick={() => handleOpenEditor(profile)} size="small">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(profile.id)} size="small" color="error">
-                      <DeleteIcon />
-                    </IconButton>
-                    <IconButton 
-                      onClick={() => handleToggleStatus(profile)} 
-                      size="small"
-                      color={profile.isActive ? "success" : "warning"}
-                    >
-                      {profile.isActive ? <CheckIcon /> : <BlockIcon />}
-                    </IconButton>
+                    <Tooltip title="Редактировать">
+                      <IconButton onClick={() => handleOpenEditor(profile)} size="small">
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Удалить">
+                      <IconButton onClick={() => handleDelete(profile.id)} size="small" color="error">
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={profile.isActive ? "Деактивировать" : "Активировать"}>
+                      <IconButton 
+                        onClick={() => handleToggleStatus(profile)} 
+                        size="small"
+                        color={profile.isActive ? "success" : "warning"}
+                      >
+                        {profile.isActive ? <CheckIcon /> : <BlockIcon />}
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={profile.isVerified ? "Отменить проверку" : "Отметить как проверенную"}>
+                      <IconButton 
+                        onClick={() => handleVerify(profile.id)} 
+                        size="small"
+                        color={profile.isVerified ? "success" : "warning"}
+                        disabled={processingIds[profile.id]}
+                      >
+                        {processingIds[profile.id] ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <VerifyIcon />
+                        )}
+                      </IconButton>
+                    </Tooltip>
                   </CardActions>
                 </Card>
               </Grid>
@@ -304,6 +427,22 @@ const ProfilesPage: React.FC = () => {
           />
         </>
       )}
+      
+      {/* Добавляем Snackbar */}
+      <Snackbar
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
