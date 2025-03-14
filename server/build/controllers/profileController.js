@@ -28,9 +28,8 @@ const getProfiles = async (req, res) => {
         const isAdminRequest = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.startsWith('Bearer ');
         console.log('Request query:', req.query);
         console.log('Is admin request:', isAdminRequest);
-        const filters = {
-            isActive: isAdminRequest ? undefined : true,
-        };
+        // ВАЖНОЕ ИЗМЕНЕНИЕ: По умолчанию не фильтруем по isActive
+        const filters = {};
         // Базовые фильтры
         if (cityId)
             filters.cityId = Number(cityId);

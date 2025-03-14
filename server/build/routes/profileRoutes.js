@@ -57,4 +57,8 @@ router.put('/:id', auth_1.authMiddleware, async (req, res) => {
 router.delete('/:id', auth_1.authMiddleware, async (req, res) => {
     await profileController.deleteProfile(req, res);
 });
+// Добавляем маршрут для верификации анкеты
+router.post('/:id/verify', auth_1.authMiddleware, async (req, res) => {
+    await profileController.verifyProfile(req, res);
+});
 exports.default = router;

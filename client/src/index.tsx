@@ -12,8 +12,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import CitiesPage from './pages/admin/CitiesPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import ProfilesPage from './pages/admin/ProfilesPage';
+import EditProfilePage from './pages/admin/EditProfilePage';
 import AdminLayout from './components/admin/AdminLayout';
-import { Navigate } from 'react-router-dom';
 
 // Создаем роутер с явным определением всех маршрутов
 const router = createBrowserRouter([
@@ -51,7 +51,11 @@ const router = createBrowserRouter([
           },
           {
             path: "profiles/new",
-            element: <Navigate to="/admin/profiles" replace />
+            element: <EditProfilePage />
+          },
+          {
+            path: "profiles/:id/edit",
+            element: <EditProfilePage />
           },
           {
             path: "cities",
