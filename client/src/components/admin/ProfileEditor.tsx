@@ -120,28 +120,39 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
       }
     };
 
-    const fetchProfile = async () => {
-      if (profileId) {
-        try {
-          setLoading(true);
-          setError(null);
-          const response = await api.get(`/profiles/${profileId}`);
-          if (response.data) {
-            setFormData(response.data);
-            setPhotos(response.data.photos ? JSON.parse(response.data.photos) : []);
+    console.log('ProfileEditor props:', { profile, profileId });
+
+    // Инициализируем данные формы из profile, если он передан
+    if (profile) {
+      console.log('Initializing form data from profile:', profile);
+      setFormData(profile);
+      
+      // Обработка фотографий
+      try {
+        let photosArray: string[] = [];
+        if (profile.photos) {
+          if (typeof profile.photos === 'string') {
+            try {
+              photosArray = JSON.parse(profile.photos);
+              console.log('Successfully parsed photos from JSON string:', photosArray);
+            } catch (e) {
+              console.error('Error parsing photos JSON:', e);
+              photosArray = [];
+            }
+          } else if (Array.isArray(profile.photos)) {
+            photosArray = profile.photos;
+            console.log('Using photos array directly:', photosArray);
           }
-        } catch (err) {
-          console.error('Error fetching profile:', err);
-          setError('Ошибка при загрузке данных анкеты');
-        } finally {
-          setLoading(false);
         }
+        setPhotos(photosArray);
+      } catch (e) {
+        console.error('Error processing photos:', e);
+        setPhotos([]);
       }
-    };
+    }
 
     fetchCities();
-    fetchProfile();
-  }, [profileId]);
+  }, [profile, profileId]);
 
   useEffect(() => {
     console.log('Cities state updated:', cities);
@@ -281,19 +292,43 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     service: string,
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const currentServices = formData.services ? JSON.parse(formData.services) : [];
-    const newServices = event.target.checked
-      ? [...currentServices, service]
-      : currentServices.filter((s: string) => s !== service);
-
-    setFormData({
-      ...formData,
-      services: JSON.stringify(newServices),
-    });
+    try {
+      let currentServices: string[] = [];
+      
+      if (formData.services) {
+        if (typeof formData.services === 'string') {
+          try {
+            currentServices = JSON.parse(formData.services);
+          } catch (e) {
+            console.error('Error parsing services JSON:', e);
+            currentServices = [];
+          }
+        } else if (Array.isArray(formData.services)) {
+          currentServices = formData.services;
+        }
+      }
+      
+      console.log('Current services before change:', currentServices);
+      
+      const newServices = event.target.checked
+        ? [...currentServices, service]
+        : currentServices.filter((s: string) => s !== service);
+      
+      console.log('New services after change:', newServices);
+      
+      setFormData({
+        ...formData,
+        services: JSON.stringify(newServices),
+      });
+    } catch (e) {
+      console.error('Error in handleServiceChange:', e);
+    }
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    console.log('Submitting form with data:', formData);
+    console.log('Photos state:', photos);
     
     // Проверяем обязательные поля
     const requiredFields = [
@@ -349,11 +384,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     setError(null);
 
     // Преобразуем массивы в JSON строки перед отправкой
-    const dataToSend: Profile = {
-      ...formData as Profile,
-      photos: JSON.stringify(photos),
-      services: formData.services || '[]'
-    };
+    const dataToSend = {
+      ...formData,
+      photos: typeof formData.photos === 'string' ? formData.photos : JSON.stringify(photos),
+      services: typeof formData.services === 'string' ? formData.services : JSON.stringify([])
+    } as Profile;
 
     console.log('Sending profile data:', dataToSend);
     onSave(dataToSend);

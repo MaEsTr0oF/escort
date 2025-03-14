@@ -28,11 +28,17 @@ const EditProfilePage: React.FC = () => {
   const fetchProfile = async (profileId: number) => {
     try {
       setLoading(true);
+      console.log('Fetching profile with ID:', profileId);
       const response = await api.get(`/profiles/${profileId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log('Profile data received:', response.data);
+      console.log('Photos type:', typeof response.data.photos);
+      console.log('Photos value:', response.data.photos);
+      console.log('Services type:', typeof response.data.services);
+      console.log('Services value:', response.data.services);
       setProfile(response.data);
     } catch (error) {
       console.error('Ошибка при загрузке профиля:', error);

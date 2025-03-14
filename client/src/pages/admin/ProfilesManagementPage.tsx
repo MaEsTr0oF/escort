@@ -7,6 +7,10 @@ import {
   Card,
   CardContent,
   Button,
+  Chip,
+  CircularProgress,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -24,6 +28,12 @@ const ProfilesManagementPage: React.FC = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [processingIds, setProcessingIds] = useState<Record<string, boolean>>({});
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error' | 'info' | 'warning',
+  });
 
   useEffect(() => {
     fetchProfiles();
@@ -40,12 +50,31 @@ const ProfilesManagementPage: React.FC = () => {
 
   const handleVerify = async (profileId: number, currentStatus: boolean) => {
     try {
+      setProcessingIds(prev => ({ ...prev, [profileId]: true }));
       await api.patch(`/admin/profiles/${profileId}/verify`, {
         isVerified: !currentStatus
       });
+      
+      // Обновляем список анкет
       fetchProfiles();
+      
+      // Показываем сообщение об успехе
+      setSnackbar({
+        open: true,
+        message: `Анкета ${!currentStatus ? 'верифицирована' : 'снята с верификации'}`,
+        severity: 'success',
+      });
     } catch (error) {
       console.error('Error verifying profile:', error);
+      
+      // Показываем сообщение об ошибке
+      setSnackbar({
+        open: true,
+        message: 'Ошибка при изменении статуса верификации',
+        severity: 'error',
+      });
+    } finally {
+      setProcessingIds(prev => ({ ...prev, [profileId]: false }));
     }
   };
 
@@ -92,6 +121,10 @@ const ProfilesManagementPage: React.FC = () => {
     }
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       {!showEditor ? (
@@ -112,7 +145,11 @@ const ProfilesManagementPage: React.FC = () => {
           <Grid container spacing={3}>
             {profiles.map((profile) => (
               <Grid item xs={12} key={profile.id}>
-                <Card sx={{ bgcolor: 'background.paper' }}>
+                <Card sx={{ 
+                  bgcolor: 'background.paper',
+                  border: profile.isVerified ? '2px solid green' : '1px solid grey',
+                  opacity: profile.isActive ? 1 : 0.6,
+                }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Box>
@@ -125,9 +162,19 @@ const ProfilesManagementPage: React.FC = () => {
                         <Typography color="text.secondary">
                           Телефон: {profile.phone}
                         </Typography>
-                        <Typography color="text.secondary">
-                          Статус: {profile.isActive ? 'Активна' : 'Отключена'}
-                        </Typography>
+                        <Box display="flex" alignItems="center" mt={1}>
+                          <Chip 
+                            label={profile.isActive ? 'Активна' : 'Отключена'}
+                            color={profile.isActive ? 'success' : 'default'}
+                            size="small"
+                            sx={{ mr: 1 }}
+                          />
+                          <Chip 
+                            label={profile.isVerified ? 'Верифицирована' : 'Не верифицирована'}
+                            color={profile.isVerified ? 'primary' : 'default'}
+                            size="small"
+                          />
+                        </Box>
                       </Box>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <IconButton onClick={() => handleEdit(profile)}>
@@ -139,14 +186,16 @@ const ProfilesManagementPage: React.FC = () => {
                         <IconButton 
                           onClick={() => handleToggleActive(profile.id, profile.isActive)}
                           color={profile.isActive ? "success" : "inherit"}
+                          disabled={processingIds[profile.id]}
                         >
-                          <CheckIcon />
+                          {processingIds[profile.id] ? <CircularProgress size={24} /> : <CheckIcon />}
                         </IconButton>
                         <IconButton 
                           onClick={() => handleVerify(profile.id, profile.isVerified)}
                           color={profile.isVerified ? "success" : "inherit"}
+                          disabled={processingIds[profile.id]}
                         >
-                          <VerifiedIcon />
+                          {processingIds[profile.id] ? <CircularProgress size={24} /> : <VerifiedIcon />}
                         </IconButton>
                       </Box>
                     </Box>
@@ -155,6 +204,17 @@ const ProfilesManagementPage: React.FC = () => {
               </Grid>
             ))}
           </Grid>
+          
+          <Snackbar
+            open={snackbar.open}
+            autoHideDuration={3000}
+            onClose={handleCloseSnackbar}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+              {snackbar.message}
+            </Alert>
+          </Snackbar>
         </>
       ) : (
         <>

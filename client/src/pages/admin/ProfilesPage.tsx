@@ -118,11 +118,19 @@ const ProfilesPage: React.FC = () => {
   // Функция для получения полных данных профиля
   const fetchFullProfile = async (id: number): Promise<Profile | null> => {
     try {
-      const response = await api.get(`/admin/profiles/${id}`, {
+      console.log('Fetching full profile data for ID:', id);
+      const response = await api.get(`/profiles/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      
+      console.log('Full profile data received:', response.data);
+      console.log('Photos type:', typeof response.data.photos);
+      console.log('Photos value:', response.data.photos);
+      console.log('Services type:', typeof response.data.services);
+      console.log('Services value:', response.data.services);
+      
       return response.data;
     } catch (error) {
       console.error('Error fetching full profile:', error);
@@ -133,8 +141,10 @@ const ProfilesPage: React.FC = () => {
   const handleOpenEditor = async (profile?: ProfileListItem) => {
     if (profile) {
       // Получаем полные данные для редактирования
+      console.log('Opening editor for profile:', profile.id);
       const fullProfile = await fetchFullProfile(profile.id);
       if (fullProfile) {
+        console.log('Setting profile data for editor:', fullProfile);
         setSelectedProfile(fullProfile);
       } else {
         setError('Не удалось загрузить данные анкеты для редактирования');
