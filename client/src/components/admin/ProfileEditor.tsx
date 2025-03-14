@@ -148,22 +148,75 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
     console.log('Cities state updated:', cities);
   }, [cities]);
 
-  const handlePhotoAdd = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
+  // Функция для сжатия изображения
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      reader.readAsDataURL(file);
       
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string' && photos.length < MAX_PHOTOS) {
-          setPhotos([...photos, reader.result]);
-          setFormData({
-            ...formData,
-            photos: [...photos, reader.result],
-          });
-        }
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Сжимаем до качества 0.7 (70%)
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl);
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Ошибка при загрузке изображения'));
+        };
       };
       
-      reader.readAsDataURL(file);
+      reader.onerror = () => {
+        reject(new Error('Ошибка при чтении файла'));
+      };
+    });
+  };
+
+  const handlePhotoAdd = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      try {
+        const compressedImage = await compressImage(file);
+        
+        if (photos.length < MAX_PHOTOS) {
+          const newPhotos = [...photos, compressedImage];
+          setPhotos(newPhotos);
+          setFormData({
+            ...formData,
+            photos: newPhotos,
+          });
+        }
+      } catch (error) {
+        console.error('Ошибка при сжатии изображения:', error);
+        setError('Не удалось обработать изображение');
+      }
     }
   };
 

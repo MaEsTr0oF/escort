@@ -39,11 +39,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cityController = __importStar(require("../controllers/cityController"));
 const router = express_1.default.Router();
-// Public routes
+// Маршрут для получения списка городов
 router.get('/', async (req, res) => {
     await cityController.getCities(req, res);
 });
-router.get('/districts/:cityId', async (req, res) => {
-    await cityController.getDistrictsByCityId(req, res);
+// Админские маршруты для городов
+router.post('/', async (req, res) => {
+    await cityController.createCity(req, res);
+});
+router.put('/:id', async (req, res) => {
+    await cityController.updateCity(req, res);
+});
+router.delete('/:id', async (req, res) => {
+    await cityController.deleteCity(req, res);
 });
 exports.default = router;

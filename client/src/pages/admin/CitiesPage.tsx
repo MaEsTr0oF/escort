@@ -18,16 +18,15 @@ import {
   DialogActions,
   TextField,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
 } from '@mui/icons-material';
-import axios from 'axios';
-import { API_URL } from '../../config';
+import { api } from '../../utils/api';
 import { City } from '../../types';
-import { handleAxiosError } from '../../utils/errorHandling';
 import { useNavigate } from 'react-router-dom';
 
 interface CityWithCount extends City {
@@ -41,19 +40,20 @@ const CitiesPage: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingCity, setEditingCity] = useState<Partial<City> | null>(null);
   const [error, setError] = useState('');
-  const token = localStorage.getItem('adminToken');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const fetchCities = async () => {
     try {
-      const response = await axios.get(`${API_URL}/cities`);
+      setLoading(true);
+      setError('');
+      const response = await api.get('/admin/cities');
       setCities(response.data);
     } catch (error) {
-      const { message, status } = handleAxiosError(error);
-      console.error('Error fetching cities:', message);
-      if (status === 401) {
-        navigate('/login');
-      }
+      console.error('Error fetching cities:', error);
+      setError('Ошибка при загрузке списка городов');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,27 +73,28 @@ const CitiesPage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!editingCity?.name) return;
+    if (!editingCity?.name) {
+      setError('Название города не может быть пустым');
+      return;
+    }
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      setLoading(true);
+      setError('');
 
       if (editingCity.id) {
-        await axios.put(
-          `${API_URL}/admin/cities/${editingCity.id}`,
-          editingCity,
-          { headers }
-        );
+        await api.put(`/admin/cities/${editingCity.id}`, editingCity);
       } else {
-        await axios.post(`${API_URL}/admin/cities`, editingCity, { headers });
+        await api.post('/admin/cities', editingCity);
       }
 
       fetchCities();
       handleClose();
     } catch (error) {
-      const { message } = handleAxiosError(error);
-      console.error('Error saving city:', message);
-      setError(message);
+      console.error('Error saving city:', error);
+      setError('Ошибка при сохранении города');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -101,14 +102,27 @@ const CitiesPage: React.FC = () => {
     if (!window.confirm('Вы уверены, что хотите удалить этот город?')) return;
 
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(`${API_URL}/admin/cities/${id}`, { headers });
+      setLoading(true);
+      setError('');
+      await api.delete(`/admin/cities/${id}`);
       fetchCities();
     } catch (error) {
-      const { message } = handleAxiosError(error);
-      console.error('Error deleting city:', message);
+      console.error('Error deleting city:', error);
+      setError('Ошибка при удалении города');
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading && cities.length === 0) {
+    return (
+      <Container maxWidth="lg">
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 5 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg">
@@ -156,12 +170,20 @@ const CitiesPage: React.FC = () => {
                     size="small"
                     color="error"
                     onClick={() => handleDelete(city.id)}
+                    disabled={loading}
                   >
                     <DeleteIcon />
                   </IconButton>
                 </TableCell>
               </TableRow>
             ))}
+            {cities.length === 0 && !loading && (
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  Нет доступных городов
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -178,12 +200,18 @@ const CitiesPage: React.FC = () => {
             fullWidth
             value={editingCity?.name || ''}
             onChange={(e) => setEditingCity({ ...editingCity, name: e.target.value })}
+            error={!editingCity?.name}
+            helperText={!editingCity?.name ? 'Название города обязательно' : ''}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Отмена</Button>
-          <Button onClick={handleSave} variant="contained">
-            Сохранить
+          <Button onClick={handleClose} disabled={loading}>Отмена</Button>
+          <Button 
+            onClick={handleSave} 
+            variant="contained" 
+            disabled={loading || !editingCity?.name}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Сохранить'}
           </Button>
         </DialogActions>
       </Dialog>

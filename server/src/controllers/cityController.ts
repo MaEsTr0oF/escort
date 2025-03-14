@@ -16,15 +16,8 @@ export const getCities = async (_req: Request, res: Response) => {
 
     console.log('Found cities:', cities);
 
-    // Преобразуем данные для совместимости с фронтендом
-    const formattedCities = cities.map(city => ({
-      id: city.id,
-      name: city.name,
-      profiles: { length: city._count.profiles }
-    }));
-
-    console.log('Formatted cities:', formattedCities);
-    res.json(formattedCities);
+    // Возвращаем данные в ожидаемом клиентом формате
+    res.json(cities);
   } catch (error) {
     console.error('Error fetching cities:', error);
     res.status(500).json({ error: 'Failed to fetch cities' });

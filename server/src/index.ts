@@ -11,6 +11,7 @@ import { authMiddleware } from './middleware/auth';
 import authRoutes from './routes/authRoutes';
 import profileRoutes from './routes/profileRoutes';
 import cityRoutes from './routes/cityRoutes';
+import adminCityRoutes from './routes/adminCityRoutes';
 import settingsRoutes from './routes/settingsRoutes';
 import * as dashboardController from './controllers/dashboardController';
 
@@ -53,11 +54,11 @@ async function checkDatabaseConnection() {
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || ['http://localhost:3000', 'http://eskortvsegorodarfreal.site'],
   credentials: true,
 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
@@ -73,13 +74,16 @@ app.use('/api/auth', authRoutes);
 // Маршруты администратора
 app.use('/api/admin', authMiddleware);
 
+// Админские маршруты для городов, профилей и настроек
+app.use('/api/admin/cities', adminCityRoutes);
+
 // Добавляем маршрут для получения статистики дашборда
-app.get('/api/admin/dashboard/stats', authMiddleware, async (req, res) => {
+app.get('/api/admin/dashboard/stats', async (req, res) => {
   await dashboardController.getStats(req, res);
 });
 
 // Добавляем маршрут для получения профилей для админки
-app.get('/api/admin/profiles', authMiddleware, async (req, res) => {
+app.get('/api/admin/profiles', async (req, res) => {
   await profileController.getAdminProfiles(req, res);
 });
 
