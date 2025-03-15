@@ -357,7 +357,7 @@ const ProfilesPage: React.FC = () => {
       {!showEditor ? (
         <>
           <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h5">правление анкетами</Typography>
+            <Typography variant="h5">Управление анкетами</Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
@@ -369,7 +369,7 @@ const ProfilesPage: React.FC = () => {
 
           <Alert severity="info" sx={{ mb: 3 }}>
             <Typography variant="body1">
-              <strong>Верификация анкет:</strong> Нажмите на статус &quot;Проверено/Не проверено&quot; или используйте кнопку <VerifyIcon fontSize="small" sx={{ verticalAlign: 'middle' }}/> для верификации анкеты. Верифицированные анкеты помечаются зеленым цветом.
+              <strong>Верификация анкет v2.0:</strong> Нажмите на статус &quot;Проверено/Не проверено&quot; или используйте кнопку <VerifyIcon fontSize="small" sx={{ verticalAlign: 'middle' }}/> для верификации анкеты. Верифицированные анкеты помечаются зеленым цветом.
             </Typography>
           </Alert>
 
