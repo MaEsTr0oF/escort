@@ -84,7 +84,7 @@ const ProfilesPage: React.FC = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/admin/profiles', {
+      const response = await api.get('/admin/profiles', {
         headers: {
           Authorization: `Bearer ${token}`
         }

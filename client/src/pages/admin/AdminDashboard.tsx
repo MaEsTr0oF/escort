@@ -79,7 +79,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get(`${API_URL}/admin/dashboard/stats`, {
+        const response = await axios.get(`/admin/dashboard/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setStats(response.data);
@@ -90,7 +90,7 @@ const AdminDashboard: React.FC = () => {
 
     const fetchLatestProfiles = async () => {
       try {
-        const response = await axios.get(`${API_URL}/admin/profiles`, {
+        const response = await axios.get(`/admin/profiles`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { limit: 5 },
         });
@@ -98,7 +98,7 @@ const AdminDashboard: React.FC = () => {
         if (Array.isArray(response.data)) {
           setLatestProfiles(response.data);
         } else {
-          console.error('Expected array but got:', typeof response.data);
+          console.error('Expected array but got:', typeof response.data, response.data);
           setLatestProfiles([]);
         }
       } catch (error) {
