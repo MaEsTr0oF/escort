@@ -94,9 +94,14 @@ const ProfilesPage: React.FC = () => {
         return;
       }
       
-      const response = await api.get('/admin/profiles', {
+      // Добавляем nonce к запросу для предотвращения кеширования
+      const timestamp = new Date().getTime();
+      const response = await api.get(`/admin/profiles?_nocache=${timestamp}`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         },
       });
 
