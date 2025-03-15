@@ -179,7 +179,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ profile, profileId, onSav
         setError(null);
         console.log('Fetching cities in ProfileEditor...');
         
-        const response = await api.get('/cities');
+        const response = await api.get('/api/cities');
         console.log('Cities response status:', response.status);
         console.log('Cities data length:', response.data?.length);
         

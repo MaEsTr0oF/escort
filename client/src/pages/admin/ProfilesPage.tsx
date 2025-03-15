@@ -84,46 +84,17 @@ const ProfilesPage: React.FC = () => {
   const fetchProfiles = async () => {
     try {
       setLoading(true);
-      setError('');
-      console.log('Загрузка списка анкет...');
-      
-      // Проверяем, есть ли токен
-      if (!token) {
-        console.error('Отсутствует токен авторизации');
-        navigate('/admin/login');
-        return;
-      }
-      
-      // Добавляем nonce к запросу для предотвращения кеширования
-      const timestamp = new Date().getTime();
-      const response = await api.get(`/admin/profiles?_nocache=${timestamp}`, {
+      const response = await api.get('/api/admin/profiles', {
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        },
-      });
-
-      // Проверяем ответ
-      if (response.status >= 200 && response.status < 300) {
-        console.log('Успешно получены данные анкет:', response.data);
-        
-        // Проверка, является ли response.data массивом
-        if (Array.isArray(response.data)) {
-          console.log(`Получено ${response.data.length} анкет`);
-          setProfiles(response.data);
-        } else {
-          console.error('Expected array but got:', typeof response.data, response.data);
-          setProfiles([]);
-          setError('Данные профилей в неверном формате');
+          Authorization: `Bearer ${token}`
         }
-      } else {
-        throw new Error(`Ошибка API: ${response.status}`);
-      }
+      });
+      console.log('Profiles response:', response.data);
+      setProfiles(response.data);
+      setError('');
     } catch (error) {
       console.error('Error fetching profiles:', error);
-      setError('Ошибка при загрузке анкет');
+      setError('Ошибка при загрузке списка анкет');
     } finally {
       setLoading(false);
     }
@@ -297,7 +268,7 @@ const ProfilesPage: React.FC = () => {
       console.log(`Текущий статус верификации: ${profile.isVerified}, новый статус: ${newVerifiedStatus}`);
       
       // Используем правильный эндпоинт с токеном авторизации
-      const response = await api.patch(`/admin/profiles/${id}/verify`, 
+      const response = await api.patch(`/api/admin/profiles/${id}/verify`, 
         { isVerified: newVerifiedStatus },
         {
           headers: {

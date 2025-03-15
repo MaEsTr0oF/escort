@@ -63,7 +63,7 @@ const ProfilesManagementPage: React.FC = () => {
       
       // Добавляем nonce к запросу для предотвращения кеширования
       const timestamp = new Date().getTime();
-      const response = await api.get(`/admin/profiles?_nocache=${timestamp}`, {
+      const response = await api.get(`/api/admin/profiles?_nocache=${timestamp}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -99,7 +99,7 @@ const ProfilesManagementPage: React.FC = () => {
       console.log(`Verifying profile ${profileId}, current status: ${currentStatus}`);
       
       // Используем правильный API endpoint для верификации с токеном авторизации
-      await api.patch(`/admin/profiles/${profileId}/verify`, {
+      await api.patch(`/api/admin/profiles/${profileId}/verify`, {
         isVerified: !currentStatus
       }, {
         headers: {
@@ -139,7 +139,7 @@ const ProfilesManagementPage: React.FC = () => {
     
     if (window.confirm('Вы уверены, что хотите удалить эту анкету?')) {
       try {
-        await api.delete(`/profiles/${profileId}`, {
+        await api.delete(`/api/profiles/${profileId}`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -167,7 +167,7 @@ const ProfilesManagementPage: React.FC = () => {
 
   const handleSaveEdit = async (updatedProfile: Profile) => {
     try {
-      await api.put(`/profiles/${updatedProfile.id}`, updatedProfile);
+      await api.put(`/api/profiles/${updatedProfile.id}`, updatedProfile);
       setShowEditor(false);
       setEditingProfile(null);
       fetchProfiles();
@@ -188,7 +188,7 @@ const ProfilesManagementPage: React.FC = () => {
       console.log(`Toggling status for profile ${profileId}, current status: ${currentStatus}`);
       
       // Используем правильный API endpoint для переключения статуса с токеном авторизации
-      await api.patch(`/admin/profiles/${profileId}/toggle-active`, {
+      await api.patch(`/api/admin/profiles/${profileId}/toggle-active`, {
         isActive: !currentStatus
       }, {
         headers: {
