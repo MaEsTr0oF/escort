@@ -96,112 +96,36 @@ app.use((req, res, next) => {
     next();
 });
 // Health check endpoint
-app.get('/health', (_req, res) => {
+app.get('/api/health', (_req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 // Тестовый маршрут
-app.get('/test', (_req, res) => {
+app.get('/api/test', (_req, res) => {
     res.status(200).json({ message: 'API работает!' });
 });
-// Публичные маршруты - ВАЖНОЕ ИЗМЕНЕНИЕ: убрали префикс /api
-app.use('/profiles', profileRoutes_1.default);
-app.use('/cities', cityRoutes_1.default);
-app.use('/settings', settingsRoutes_1.default);
-app.use('/auth', authRoutes_1.default);
-// Маршруты администратора - ВАЖНОЕ ИЗМЕНЕНИЕ: убрали префикс /api
-// Маршрут для верификации профиля
-app.patch('/admin/profiles/:id/verify', auth_1.authMiddleware, async (req, res) => {
-    try {
-        const { id } = req.params;
-        // Получаем текущий профиль
-        const profile = await prisma.profile.findUnique({
-            where: { id: Number(id) },
-        });
-        if (!profile) {
-            return res.status(404).json({ error: 'Профиль не найден' });
-        }
-        // Инвертируем статус верификации
-        const updatedProfile = await prisma.profile.update({
-            where: { id: Number(id) },
-            data: {
-                isVerified: !profile.isVerified,
-            },
-        });
-        console.log(`Статус верификации профиля ${id} изменен на: ${updatedProfile.isVerified}`);
-        res.json(updatedProfile);
-    }
-    catch (error) {
-        console.error('Ошибка при верификации профиля:', error);
-        res.status(500).json({ error: 'Не удалось изменить статус верификации' });
-    }
-});
-app.use('/admin', auth_1.authMiddleware);
-// Админские маршруты для городов, профилей и настроек
-app.use('/admin/cities', adminCityRoutes_1.default);
-// Добавляем маршрут для получения статистики дашборда
-app.get('/admin/dashboard/stats', async (req, res) => {
+// Публичные маршруты
+app.use('/api/profiles', profileRoutes_1.default);
+app.use('/api/cities', cityRoutes_1.default);
+app.use('/api/settings', settingsRoutes_1.default);
+app.use('/api/auth', authRoutes_1.default);
+// Защищенные административные маршруты
+app.use('/api/admin', auth_1.authMiddleware);
+// Админские маршруты для городов
+app.use('/api/admin/cities', adminCityRoutes_1.default);
+// Маршрут для получения статистики дашборда
+app.get('/api/admin/dashboard/stats', async (req, res) => {
     await dashboardController.getStats(req, res);
 });
-// Добавляем маршрут для получения профилей для админки
-app.get('/admin/profiles', async (req, res) => {
-    app.patch('/admin/profiles/:id/toggle-active', auth_1.authMiddleware, async (req, res) => {
-        const { id } = req.params;
-        try {
-            console.log(`[DEBUG] Переключение статуса профиля с ID: ${id}`);
-            // Получаем текущий профиль
-            const profile = await prisma.profile.findUnique({
-                where: { id: Number(id) },
-            });
-            if (!profile) {
-                console.log(`[DEBUG] Профиль с ID ${id} не найден`);
-                return res.status(404).json({ error: 'Профиль не найден' });
-            }
-            // Инвертируем статус isActive
-            const updatedProfile = await prisma.profile.update({
-                where: { id: Number(id) },
-                data: { isActive: !profile.isActive },
-            });
-            console.log(`[DEBUG] Профиль ${id} обновлен, isActive: ${updatedProfile.isActive}`);
-            res.json(updatedProfile);
-        }
-        catch (error) {
-            console.error('Ошибка при изменении статуса профиля:', error);
-            res.status(500).json({ error: 'Не удалось изменить статус профиля' });
-        }
-    });
-    // Маршрут для верификации профиля
-    app.patch('/admin/profiles/:id/verify', auth_1.authMiddleware, async (req, res) => {
-        const { id } = req.params;
-        try {
-            // Получаем текущий профиль
-            const profile = await prisma.profile.findUnique({
-                where: { id: Number(id) },
-            });
-            if (!profile) {
-                return res.status(404).json({ error: 'Профиль не найден' });
-            }
-            // Инвертируем статус isVerified
-            const updatedProfile = await prisma.profile.update({
-                where: { id: Number(id) },
-                data: { isVerified: !profile.isVerified },
-            });
-            res.json(updatedProfile);
-        }
-        catch (error) {
-            console.error('Ошибка при верификации профиля:', error);
-            res.status(500).json({ error: 'Не удалось верифицировать профиль' });
-        }
-    });
+// Получение списка профилей для админки
+app.get('/api/admin/profiles', async (req, res) => {
     await profileController.getAdminProfiles(req, res);
 });
-// Прямой маршрут для авторизации (для отладки)
-app.post('/auth/login', async (req, res) => {
-    console.log('Получен запрос на авторизацию:', req.body);
-    await authController.login(req, res);
+// Маршрут для получения отдельного профиля для админки
+app.get('/api/admin/profiles/:id', async (req, res) => {
+    await profileController.getProfileById(req, res);
 });
-// Serve static files from the React app
-app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
-app.patch('/admin/profiles/:id/toggle-active', auth_1.authMiddleware, async (req, res) => {
+// Маршрут для активации/деактивации профиля
+app.patch('/api/admin/profiles/:id/toggle-active', async (req, res) => {
     const { id } = req.params;
     try {
         console.log(`[DEBUG] Переключение статуса профиля с ID: ${id}`);
@@ -226,6 +150,43 @@ app.patch('/admin/profiles/:id/toggle-active', auth_1.authMiddleware, async (req
         res.status(500).json({ error: 'Не удалось изменить статус профиля' });
     }
 });
+// Маршрут для верификации профиля
+app.patch('/api/admin/profiles/:id/verify', async (req, res) => {
+    const { id } = req.params;
+    try {
+        console.log(`[DEBUG] Верификация профиля с ID: ${id}`);
+        // Получаем текущий профиль
+        const profile = await prisma.profile.findUnique({
+            where: { id: Number(id) },
+        });
+        if (!profile) {
+            console.log(`[DEBUG] Профиль с ID ${id} не найден`);
+            return res.status(404).json({ error: 'Профиль не найден' });
+        }
+        // Инвертируем статус isVerified
+        const updatedProfile = await prisma.profile.update({
+            where: { id: Number(id) },
+            data: { isVerified: !profile.isVerified },
+        });
+        console.log(`[DEBUG] Профиль ${id} обновлен, isVerified: ${updatedProfile.isVerified}`);
+        res.json(updatedProfile);
+    }
+    catch (error) {
+        console.error('Ошибка при верификации профиля:', error);
+        res.status(500).json({ error: 'Не удалось верифицировать профиль' });
+    }
+});
+// Маршрут проверки валидности токена
+app.get('/api/admin/verify-token', async (req, res) => {
+    res.status(200).json({ valid: true });
+});
+// Прямой маршрут для авторизации (для отладки)
+app.post('/api/auth/login', async (req, res) => {
+    console.log('Получен запрос на авторизацию:', req.body);
+    await authController.login(req, res);
+});
+// Serve static files from the React app
+app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
 // The "catchall" handler: for any request that doesn't
 // match one above, send back React's index.html file.
 app.get('*', (req, res) => {
